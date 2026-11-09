@@ -73,10 +73,6 @@ body.gar .o,body.gar #pi,body.gar #scope,body.gar #tc,body.gar #bt{display:none!
 <div id="start"></div><div id="gui"></div><div id="tree"></div>
 <div id="ld"><div class="sp"></div><div id="ldm">Loading…</div><div id="ldbar"><i id="ldb"></i></div><div id="ldt"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- Photon Realtime SDK (adjusted for browser use) -->
-<script>var module={exports:{}};</script>
-<script src="https://cdn.jsdelivr.net/npm/photon-realtime@4.4.0/photon-realtime-module.js"></script>
-<script>Photon.PhotonPeer.setWebSocketImpl(window.WebSocket);</script>
 <script>
 const $=id=>document.getElementById(id);
 if(typeof THREE==='undefined')$('start').innerHTML='Failed to load Three.js. Check your network connection.';
@@ -176,4 +172,5 @@ T('is2','SU','IS-2',5.7,'t34_85',2200,8000,8,.7,.5,210,'APCBC',O(6.8,3.1,2.5,0x4
 T('t62','SU','T-62',8.8,'is2',4500,16000,9,.9,.7,330,'APFSDS',O(6.9,3.4,2.2,0x4a5a3a,5.9,2.6,6,1.5,1.05,0,250,80,50,260));
 /* ★ End of additions */
 const PT0={abrams:{n:'M1 Abrams',d:'Balanced',sp:9.5,turn:.9,br:11.7,pen:420,sh:'APFSDS',tr:.8,o:{L:7.6,W:3.6,H:2.1,col:0x5a5d3a,bl:6.4,tw:2.5,sl:1.8,arm:{front:450,side:150,rear:60,turret:500}}},
-tiger:{
+tiger:{n:'Tiger I',d:'Heavy armor',sp:6.5,turn:.7,br:5.7,pen:210,sh:'APCBC',tr:.5,o:{L:6.9,W:3.7,H:2.5,col:0x8f7f55,bl:6.8,tw:2.6,sl:.5,arm:{front:260,side:130,rear:80,turret:280}}},
+type90:{n:'Type 90',d:'High mobility',sp:13,turn:1.2,br:11.3,pen:400,sh:'APFSDS',tr:.9,o:{L:7.
