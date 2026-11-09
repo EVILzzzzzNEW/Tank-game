@@ -2,30 +2,24 @@
 <html lang="en"><head><meta charset="utf-8"><title>Armor Strike</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
-/* ---------- On-screen error box (red bar at top) ---------- */
-window.DBG=[];
-function dbg(m){try{DBG.push(String(m));let b=document.getElementById('dbgbox');if(!b){b=document.createElement('div');b.id='dbgbox';b.style.cssText='position:fixed;left:0;right:0;top:0;max-height:45vh;overflow:auto;background:#3a0a0af0;color:#ffb0b0;font:12px/1.4 monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-word;border-bottom:2px solid #f44';(document.body||document.documentElement).appendChild(b)}b.textContent=DBG.join('\n')}catch(e){}}
-window.addEventListener('error',e=>{if(e.target&&e.target!==window&&(e.target.src||e.target.href)){dbg('FAILED TO LOAD: '+(e.target.src||e.target.href));return}if(e.message)dbg('SCRIPT ERROR: '+e.message+' (line '+e.lineno+')')},true);
-window.addEventListener('error',e=>{if(e.message&&e.target===window)dbg('SCRIPT ERROR: '+e.message+' (line '+e.lineno+')')});
-window.addEventListener('unhandledrejection',e=>dbg('PROMISE ERROR: '+((e.reason&&e.reason.message)||e.reason)));
-dbg('1. Page started');
+/* Debug messages are turned off (no red box). */
+function dbg(){}
 
 /* ---------- Three.js loader: tries 3 sources, 8 s timeout each, then starts the game ---------- */
 const TH=['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js','https://unpkg.com/three@0.128.0/build/three.min.js'];
 function runGame(){
- dbg('3. Starting game…');
- if(typeof window.startGame!=='function'){dbg('startGame is missing: the game code did not load. Look for a SCRIPT ERROR above.');return}
- try{window.startGame()}catch(e){dbg('GAME CRASH: '+e.message+' | '+String(e.stack||'').split('\n').slice(0,3).join(' | '))}
+ if(typeof window.startGame!=='function')return;
+ try{window.startGame()}catch(e){}
 }
 function loadThree(i){
- if(i>=TH.length){dbg('ALL Three.js sources failed. Your network is blocking them.');return}
- dbg('2. Loading Three.js ('+(i+1)+'/'+TH.length+'): '+TH[i]);
+ if(i>=TH.length){document.getElementById('start').innerHTML='Failed to load Three.js. Check your network connection.';return}
  const s=document.createElement('script');s.src=TH[i];let ok=0;
- const t=setTimeout(()=>{if(!ok){ok=1;dbg('No response after 8 s from: '+TH[i]+' — trying next source…');s.remove();loadThree(i+1)}},8000);
- s.onload=()=>{if(ok)return;ok=1;clearTimeout(t);dbg('Three.js loaded OK from source '+(i+1));runGame()};
- s.onerror=()=>{if(ok)return;ok=1;clearTimeout(t);dbg('Blocked or failed: '+TH[i]+' — trying next source…');loadThree(i+1)};
+ const t=setTimeout(()=>{if(!ok){ok=1;s.remove();loadThree(i+1)}},8000);
+ s.onload=()=>{if(ok)return;ok=1;clearTimeout(t);runGame()};
+ s.onerror=()=>{if(ok)return;ok=1;clearTimeout(t);loadThree(i+1)};
  document.head.appendChild(s);
 }
+loadThree(0);
 </script>
 <style>
 :root{--bg:#9ec6e6;--fg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -102,14 +96,11 @@ body.gar .o,body.gar #pi,body.gar #scope,body.gar #tc,body.gar #bt{display:none!
 /* Game code. It runs only after Three.js is loaded (see loader in <head>). */
 window.startGame=function(){
 const $=id=>document.getElementById(id);
-dbg(typeof THREE==='undefined'?'4. Three.js NOT loaded':'4. Three.js ready');
-if(typeof THREE==='undefined')$('start').innerHTML='Failed to load Three.js. Check your network connection.';
 let PEN=330;const V0=700,RLD=4,wr=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a},cl=(a,b,c)=>Math.max(b,Math.min(c,a));
 const PHOTON={appId:'709a409d-8826-441c-a368-2dbe05f079e1',appVersion:'1.0.0',region:'jp'};
 const MP={c:null,on:0,nr:0,name:'',rem:new Map(),last:0};
 const TIPS=['The turret rotates faster than the hull.','The sides are thin, so angled shots are more likely to penetrate.','Scope view has no bullet drop compensation.','Destroying a tank gives you SL and RP.','In multiplayer, a destroyed tank respawns after a few seconds.'];
 const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));document.body.prepend(R.domElement);
-dbg('5. WebGL renderer created OK');
 const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,1,.3,900),RC=new THREE.Raycaster();
 sc.background=new THREE.Color(0x9ec6e6);sc.fog=new THREE.Fog(0x9ec6e6,200,650);
 sc.add(new THREE.HemisphereLight(0xffffff,0x556b3a,.85));const sun=new THREE.DirectionalLight(0xfff2d8,.9);sun.position.set(120,200,80);sc.add(sun);
@@ -127,7 +118,6 @@ const hf=(x,z)=>6*Math.sin(x*.018)*Math.cos(z*.021)+3.5*Math.sin(x*.045+z*.03)+2
 {const g=new THREE.PlaneGeometry(500,500,125,125);g.rotateX(-Math.PI/2);const p=g.attributes.position,c=new Float32Array(p.count*3),a=new THREE.Color(0x5a7a3a),b=new THREE.Color(0x9a8a60),k=new THREE.Color();
 for(let i=0;i<p.count;i++){const h=hf(p.getX(i),p.getZ(i));p.setY(i,h);k.copy(a).lerp(b,cl((h+4)/14+Math.random()*.12,0,1));c.set([k.r,k.g,k.b],i*3)}
 g.setAttribute('color',new THREE.BufferAttribute(c,3));g.computeVertexNormals();sc.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true})))}
-dbg('6. Terrain built OK');
 const TG=[],OBM=[],OB=[],ML=c=>new THREE.MeshLambertMaterial({color:c,flatShading:true});
 const rnd=(a,b)=>a+Math.random()*(b-a);
 function rp(){let x,z;do{x=rnd(-210,210);z=rnd(-210,210)}while(Math.hypot(x,z+170)<30);return[x,z]}
@@ -136,7 +126,6 @@ for(let i=0;i<16;i++){const[x,z]=rp(),s=rnd(2,6),m=new THREE.Mesh(new THREE.Icos
 for(let i=0;i<8;i++){const[x,z]=rp(),w=rnd(8,14),d=rnd(8,14),h=rnd(6,14),y=hf(x,z),m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ML(0x9a948a)),r=new THREE.Mesh(new THREE.BoxGeometry(w+1,.8,d+1),ML(0x5a3a2a));m.position.set(x,y+h/2-1,z);r.position.set(x,y+h-.6,z);reg(m,Math.hypot(w,d)*.5);reg(r)}
 for(let i=0;i<3;i++){const[x,z]=rp(),a=rnd(0,3);for(let j=0;j<6;j++){const px=x+Math.cos(a)*j*4,pz=z+Math.sin(a)*j*4,m=new THREE.Mesh(new THREE.BoxGeometry(4.2,3,.8),ML(0x8a8070));m.position.set(px,hf(px,pz)+1.3,pz);m.rotation.y=-a;reg(m,2.2)}}
 const blk=(x,z)=>{if(Math.abs(x)>235||Math.abs(z)>235)return 1;for(const o of OB)if(Math.hypot(x-o.x,z-o.z)<o.r+3.6)return 1;return 0};
-dbg('7. Cover built OK');
 /* Model hierarchy: g (hull root) → 2 track Groups / hull (extruded shape) / tu (turret rotation axis) → gun (base of barrel = rotation axis) → muz (muzzle) */
 function mkTank(o){const g=new THREE.Group(),ms=[],{L,W,H,col,bl,tw}=o,sl=o.sl||1.6,dk=0x262626,
 B=(w,h,l)=>new THREE.BoxGeometry(w,h,l),Cy=(a,b,h,s)=>new THREE.CylinderGeometry(a,b,h,s||14),
@@ -180,4 +169,240 @@ T('pz4f2','DE','Pz.IV F2',3.3,'pz2',500,1500,9,.9,.55,140,'PzGr40',O(6,2.9,2.1,0
 T('pz4h','DE','Pz.IV H',4.0,'pz4f2',900,3000,9,.9,.55,160,'PzGr40',O(6,2.9,2.2,0x8f7f55,4.9,2.1,8,.7,.95,1,80,35,25,60));
 T('panther','DE','Panther D',5.0,'pz4h',1600,6000,11,.8,.55,210,'PzGr39/42',O(6.9,3.3,2.2,0x6e6a45,5.8,2.5,8,2,1.05,1,110,50,40,100));
 T('tiger','DE','Tiger H1',5.7,'panther',2400,10000,6.5,.7,.5,210,'PzGr39',O(6.9,3.7,2.5,0x8f7f55,7.2,2.6,8,.35,1.35,1,260,130,80,280));
-T('m2a4','US','M2A4',1.0,null,0,0,11,1.1,.7,60,'AP',O(4.6,2.4,1.6,0x5a5d3a,2.2,1.6,5,1,.8
+T('m2a4','US','M2A4',1.0,null,0,0,11,1.1,.7,60,'AP',O(4.6,2.4,1.6,0x5a5d3a,2.2,1.6,5,1,.8,0,25,20,15,25));
+T('m4','US','M4 Sherman',3.7,'m2a4',700,2200,9.5,.9,.6,150,'M61 APC',O(6,2.9,2.3,0x5a5d3a,4.2,2.3,6,1.2,.85,0,80,50,40,90));
+T('m26','US','M26 Pershing',5.3,'m4',1500,5500,8.5,.8,.55,210,'T33 APCBC',O(6.8,3.3,2.3,0x5a5d3a,5.6,2.5,6,1.5,1,1,110,76,50,150));
+T('m60','US','M60A3',8.3,'m26',3200,14000,10,.9,.7,330,'APFSDS',O(7.2,3.5,2.4,0x5a5d3a,5.9,2.6,6,1.6,1.05,0,200,80,50,250));
+T('abrams','US','M1 Abrams',11.7,'m60',6000,32000,9.5,.9,.8,420,'APFSDS',O(7.6,3.6,2.1,0x9c8c5c,6.4,2.5,7,1.8,1.1,0,450,150,60,500));
+T('chiha','JP','Type 97 Chi-Ha',1.0,null,0,0,10,1,.7,60,'AP',O(5.5,2.3,2.1,0x7a6a3a,2.6,1.9,6,.7,.8,0,25,20,15,25));
+T('chinu','JP','Type 3 Chi-Nu',3.3,'chiha',500,1500,10,1,.6,120,'APHE',O(5.8,2.4,2.2,0x7a6a3a,4,2.1,6,.8,.9,1,50,35,25,50));
+T('t61','JP','Type 61',8.0,'chinu',3000,12000,10,.9,.7,300,'APDS',O(7,3,2.2,0x5f6a3a,5.5,2.4,6,1.5,1,0,160,70,45,200));
+T('t74','JP','Type 74',9.7,'t61',4200,18000,10.5,1,.8,340,'APFSDS',O(7.2,3.2,2.1,0x5f6a3a,5.8,2.4,6,1.6,1.05,0,260,90,50,300));
+T('t90','JP','Type 90',11.3,'t74',5800,30000,13,1.2,.9,400,'APFSDS',O(7.4,3.3,2,0x5f6a3a,6.2,2.3,7,1.7,1.1,0,340,100,50,380));
+/* ★ Added: Soviet tree */
+T('t34_76','SU','T-34-76',2.3,null,0,0,10,1,.6,130,'APHE',O(6.1,3,2.4,0x4f6a3a,4.4,2.2,6,.8,.9,0,45,45,30,60));
+T('t34_85','SU','T-34-85',3.7,'t34_76',600,1800,10,.9,.6,180,'APCBC',O(6.3,3,2.5,0x4f6a3a,5.2,2.3,6,.9,.9,0,90,50,40,90));
+T('is2','SU','IS-2',5.7,'t34_85',2200,8000,8,.7,.5,210,'APCBC',O(6.8,3.1,2.5,0x4f6a3a,6.1,2.6,7,.4,1.1,0,130,90,60,160));
+T('t62','SU','T-62',8.8,'is2',4500,16000,9,.9,.7,330,'APFSDS',O(6.9,3.4,2.2,0x4a5a3a,5.9,2.6,6,1.5,1.05,0,250,80,50,260));
+/* ★ End of additions */
+const PT0={abrams:{n:'M1 Abrams',d:'Balanced',sp:9.5,turn:.9,br:11.7,pen:420,sh:'APFSDS',tr:.8,o:{L:7.6,W:3.6,H:2.1,col:0x5a5d3a,bl:6.4,tw:2.5,sl:1.8,arm:{front:450,side:150,rear:60,turret:500}}},
+tiger:{n:'Tiger I',d:'Heavy armor',sp:6.5,turn:.7,br:5.7,pen:210,sh:'APCBC',tr:.5,o:{L:6.9,W:3.7,H:2.5,col:0x8f7f55,bl:6.8,tw:2.6,sl:.5,arm:{front:260,side:130,rear:80,turret:280}}},
+type90:{n:'Type 90',d:'High mobility',sp:13,turn:1.2,br:11.3,pen:400,sh:'APFSDS',tr:.9,o:{L:7.4,W:3.3,H:2,col:0x5f6a3a,bl:6.2,tw:2.3,sl:1.7,arm:{front:340,side:100,rear:50,turret:380}}}};
+let P=mkUnit(PT.pz2.o,0,-170,0,0);const EN=[];
+let inG=1,btl={k:0,sl:0,rp:0},GT=null;
+const sum=()=>btl.k||btl.sl?'Battle over: Destroyed '+btl.k+' / Earned '+btl.sl+' SL, '+btl.rp+' RP':'';
+/* ---------- Garage background (mountains, hangars, containers, uneven ground) / display tank ---------- */
+{const mt=c=>new THREE.MeshLambertMaterial({color:c,flatShading:true}),A=(m,x,y,z)=>{m.position.set(x,y,z);gsc.add(m);return m};
+gsc.add(new THREE.HemisphereLight(0xffffff,0x667755,.95));const gl=new THREE.DirectionalLight(0xfff0d0,1);gl.position.set(30,50,40);gsc.add(gl);
+const gg=new THREE.PlaneGeometry(520,520,70,70);gg.rotateX(-Math.PI/2);const p=gg.attributes.position;
+for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),d=Math.hypot(x,z);p.setY(i,d<26?0:(d-26)*.035*(1.2+Math.sin(x*.05)*Math.cos(z*.04)))}
+gg.computeVertexNormals();gsc.add(new THREE.Mesh(gg,mt(0x7a7560)));
+A(new THREE.Mesh(new THREE.CylinderGeometry(22,22,.3,40),mt(0x8d8d88)),0,.1,0);
+for(let i=0;i<16;i++){const a=i/16*6.283+rnd(-.1,.1),r=rnd(230,290),h=rnd(60,130),x=Math.cos(a)*r,z=Math.sin(a)*r;A(new THREE.Mesh(new THREE.ConeGeometry(rnd(40,70),h,7),mt(0x5d6d7d)),x,h/2-5,z);A(new THREE.Mesh(new THREE.ConeGeometry(rnd(14,22),h*.3,7),mt(0xf2f5f8)),x,h*.85-5,z)}
+for(let i=0;i<7;i++){const a=2.4+i*.55,r=rnd(55,85),w=rnd(14,20),l=rnd(20,30),h=rnd(7,10),x=Math.cos(a)*r,z=Math.sin(a)*r,g=new THREE.Group();
+g.add(new THREE.Mesh(new THREE.BoxGeometry(w,h,l),mt(0x8a8f86)));
+[-1,1].forEach(s=>{const q=new THREE.Mesh(new THREE.BoxGeometry(w*.62,.4,l+1),mt(0x5a3a2a));q.rotation.z=s*.5;q.position.set(s*w*.25,h/2+w*.12,0);g.add(q)});
+const dr=new THREE.Mesh(new THREE.BoxGeometry(w*.5,h*.7,.2),mt(0x2a2a2a));dr.position.set(0,-h*.15,l/2+.1);g.add(dr);g.rotation.y=Math.atan2(-x,-z);A(g,x,h/2,z)}
+for(let i=0;i<6;i++){const a=rnd(0,6.28),r=rnd(30,45);A(new THREE.Mesh(new THREE.BoxGeometry(6,2.6,2.4),mt([0x4a6a8a,0x8a4a3a,0x6a7a4a][i%3])),Math.cos(a)*r,1.4,Math.sin(a)*r).rotation.y=rnd(0,3)}}
+function showTank(id){if(GT)gsc.remove(GT.g);GT=mkTank(PT[id].o);GT.g.position.y=.25;gsc.add(GT.g)}
+showTank('pz2');
+/* BR matching: WWII tier 1.0 to 5.7 / modern tier 8.0 to 11.7. Enemies are picked from tanks within ±1.0 BR of your tank. */
+const et=(n,br,b,col,arm,pen,sl)=>({n,br,o:Object.assign({},TY[b],{col,arm,pen,sl})}),
+ET=[et('Pz.II',1.3,'LT',0x6a6a5a,{front:35,side:25,rear:20,turret:40},120),et('M4 Sherman',3.7,'MD',0x5a5d3a,{front:80,side:50,rear:40,turret:90},170),et('T-34-85',4.3,'MD',0x4f6a3a,{front:90,side:50,rear:45,turret:90},200,1.8),
+et('Panther',5.3,'MD',0x8f7f55,{front:120,side:60,rear:40,turret:110},210),et('Tiger I',5.7,'HV',0x4a4a44,{front:120,side:90,rear:80,turret:120},200,.5),et('IS-2',5.7,'HV',0x4f6a3a,{front:130,side:90,rear:60,turret:160},210),
+et('M60A3',8.3,'MD',0x5a5d3a,{front:200,side:80,rear:50,turret:250},300),et('T-72A',9.7,'MD',0x4f6a3a,{front:320,side:100,rear:55,turret:380},340),et('Leopard 2A4',10.7,'HV',0x55603a,{front:420,side:120,rear:60,turret:450},380),
+et('T-90A',11.3,'MD',0x4f6a3a,{front:440,side:130,rear:60,turret:480},400),et('Challenger 2',11.7,'HV',0x9c8c5c,{front:500,side:140,rear:70,turret:520},410)];
+function pickEnemy(){const pool=ET.filter(e=>Math.abs(e.br-P.br)<=1),u=pool.length?pool:ET.slice().sort((a,b)=>Math.abs(a.br-P.br)-Math.abs(b.br-P.br)).slice(0,2);return u[Math.random()*u.length|0]}
+function fillEnemies(){EN.forEach(t=>{sc.remove(t.g);t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)})});EN.length=0;
+[[-40,-60],[55,-20],[0,40],[-85,60],[90,80]].forEach(a=>{const e=pickEnemy(),u=mkUnit(e.o,a[0],a[1],rnd(0,6),1);u.nm=e.n;u.br=e.br;EN.push(u)})}
+function clearEnemies(){EN.forEach(t=>{sc.remove(t.g);t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)})});EN.length=0}
+/* ---------- Armor calculation (shared by penetration indicator and hit detection) ---------- */
+function calc(hit,dir,dist,p0){const m=hit.object,t=m.userData.tank,part=m.userData.part,lp=t.g.worldToLocal(hit.point.clone()),a=Math.atan2(lp.x,lp.z),
+zone=Math.abs(a)<.75?'front':Math.abs(a)>2.4?'rear':'side',base=part=='track'?25:part=='turret'?(zone=='front'?t.arm.turret:t.arm[zone]*.9):t.arm[zone],
+n=hit.face.normal.clone().transformDirection(m.matrixWorld),ang=Math.acos(cl(-dir.dot(n),0,1)),eff=base/Math.max(Math.cos(ang),.17),pen=(p0||PEN)*(1-dist*.00012);
+return{base,ang,eff,pen,ratio:pen/eff,rico:ang>1.22}}
+const cls=c=>c.rico?'r':c.ratio>=1.2?'g':c.ratio>=.9?'y':'r';
+/* ---------- Ballistics (gravity drop) / effects ---------- */
+const S=[],FX=[],SG=new THREE.SphereGeometry(1,8,8),BG=new THREE.BoxGeometry(.12,.12,4),TM=new THREE.MeshBasicMaterial({color:0xffc040}),MG=new THREE.BoxGeometry(.05,.05,3),MM=new THREE.MeshBasicMaterial({color:0x66ffff});
+function boom(p,s,c){const m=new THREE.Mesh(SG,new THREE.MeshBasicMaterial({color:c||0xff9a30,transparent:true,opacity:.9}));m.position.copy(p);sc.add(m);FX.push({m,life:.5,s:s||1.5})}
+function toast(s){const e=$('ev');e.textContent=s;clearTimeout(toast.t);toast.t=setTimeout(()=>e.textContent='',1600)}
+function kill(t){t.dead=1;t.g.visible=false;t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});boom(t.g.position.clone().setY(t.g.position.y+2),6);SV.kills++;const b=t.br||3,s=Math.round(120+b*60),r=Math.round(60+b*30);SV.sl+=s;SV.rp+=r;btl.k++;btl.sl+=s;btl.rp+=r;save();toast('Destroyed! +'+s+' SL / +'+r+' RP');
+setTimeout(()=>{if(!EN.includes(t))return;let x,z;do{[x,z]=rp()}while(blk(x,z));Object.assign(t,{x,z,hp:100,dead:0});t.g.visible=true;TG.push(...t.ms)},8000)}
+function shoot(t,o){const q=new THREE.Quaternion(),d=new THREE.Vector3(0,0,1),p=new THREE.Vector3();t.muz.getWorldPosition(p);t.muz.getWorldQuaternion(q);d.applyQuaternion(q);
+if(o.sp)d.add(new THREE.Vector3(rnd(-o.sp,o.sp),rnd(-o.sp,o.sp),rnd(-o.sp,o.sp))).normalize();
+if(MP.on&&t===P&&!o.mg)mpSend(4,{p:p.toArray(),d:d.toArray(),v:o.v});
+const m=new THREE.Mesh(o.mg?MG:BG,o.mg?MM:TM);sc.add(m);S.push({m,p,v:d.multiplyScalar(o.v),t:0,dist:0,en:o.en,mg:o.mg,pen:o.pen});boom(p,o.mg?.3:1.5,0xffe080)}
+/* Other players' shells (visual only, no damage check) */
+function shootVis(d){const p=new THREE.Vector3().fromArray(d.p),v=new THREE.Vector3().fromArray(d.d).multiplyScalar(d.v),m=new THREE.Mesh(BG,TM);sc.add(m);S.push({m,p,v,t:0,dist:0,en:0,mg:0,pen:0,vis:1});boom(p,1,0xffe080)}
+function impact(s,hit,dir){const t=hit.object.userData.tank;if(!t){boom(hit.point,s.mg?.3:1.5,0xccbb99);return 0}
+const c=calc(hit,dir,s.dist,s.pen),me=t===P;if(me&&P.dead)return 0;if(c.rico||(s.mg&&c.ratio<1)){boom(hit.point,.4,0xffffff);if(!s.mg)toast(me?'Hit: ricochet':'Ricochet');return 0}
+if(c.ratio>=1.2||(c.ratio>=.9&&Math.random()<(c.ratio-.9)/.3)){const dmg=s.mg?3:rnd(55,100);boom(hit.point,s.mg?.4:3);
+ if(t.remote){mpSend(2,{to:t.nr,dmg:dmg,by:MP.nr});if(!s.mg)toast('Hit!');return 0}
+ t.hp-=dmg;if(!s.mg)toast(me?'Hit!':'Penetration!');if(t.hp<=0){me?wreck():kill(t)}}
+else{boom(hit.point,1,0xffffff);if(!s.mg)toast(me?'Hit: no penetration':'No penetration')}return 0}
+/* ---------- Login / save / garage / wreck lock ---------- */
+let U=null,SV=null;const esc=s=>s.replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const DEF=()=>{const o={};for(const i in PT)if(!PT[i].par)o[i]=1;return{sl:1500,rp:200,res:{},own:o,dead:{},kills:0,sel:'pz2',nat:'DE'}};
+/* Give newly added free tanks (no prerequisite) to existing saves too */
+function load(n){try{const j=localStorage.getItem('asv2:'+n);if(j){const d=Object.assign(DEF(),JSON.parse(j));for(const i in PT)if(!PT[i].par)d.own[i]=1;return d}}catch(e){}return DEF()}
+function save(){if(!U)return;SV.name=U;SV.t=Date.now();try{localStorage.setItem('asv2:'+U,JSON.stringify(SV));localStorage.setItem('asv_last',U)}catch(e){}}
+/* Always save when the tab closes or is hidden */
+['beforeunload','pagehide'].forEach(n=>addEventListener(n,save));document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+function login(){const n=$('nm').value.trim();if(!n)return;U=n;SV=load(n);try{localStorage.setItem('asv_last',n)}catch(e){}save();showScreen('garage')}
+function showScreen(k,msg){if(k!='login'){renderGarage(msg);return}const el=$('start');el.style.display='flex';inG=1;document.body.classList.add('gar');$('gui').style.display='none';$('tree').style.display='none';
+if(k=='login'){let n='';try{n=localStorage.getItem('asv_last')||''}catch(e){}
+el.innerHTML="<h2>ARMOR STRIKE</h2><input id=nm maxlength=16 placeholder='Player name'><button id=lg>Sign in</button><small>No password needed. Progress is saved automatically in this browser.</small>";
+$('nm').value=n;$('lg').onclick=login;$('nm').onkeydown=e=>{if(e.key=='Enter')login()};return}
+const ids=Object.keys(PT),al=ids.filter(i=>SV.tanks[i].ok);
+el.innerHTML='<h2>🛡 Garage — '+esc(U)+'</h2>'+(msg?'<div class=wr>'+msg+'</div>':'')+'<div class=cards>'+ids.map(i=>{const d=PT[i],a=d.o.arm,ok=SV.tanks[i].ok;return '<div class=card><b>'+d.n+'</b> <i>'+d.d+'</i><br>Armor front '+a.front+' / side '+a.side+' / rear '+a.rear+'mm<br>BR '+d.br.toFixed(1)+' (enemy '+(d.br-1).toFixed(1)+' to '+(d.br+1).toFixed(1)+')<br>Speed '+d.sp+' m/s<br>Status: '+(ok?'🟢 Operational':'🔴 Destroyed')+'<br><button data-i='+i+(ok?'':' disabled')+'>'+(ok?'Deploy':'Locked')+'</button></div>'}).join('')+'</div>'+(al.length?'':'<div class=wr>GAME OVER — all tanks destroyed</div><button id=rp>🔧 Repair all tanks</button>')+'<div>Kills: '+SV.kills+'</div><button id=lo>Log out</button>';
+el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>deploy(b.dataset.i));
+if(!al.length)$('rp').onclick=()=>{ids.forEach(i=>SV.tanks[i].ok=1);save();showScreen('garage')};
+$('lo').onclick=()=>{U=null;SV=null;showScreen('login')}}
+/* Deploy. m=true for multiplayer (no AI enemies, random spawn point) */
+function deploy(id,m){const d=PT[id];sc.remove(P.g);P=mkUnit(d.o,0,-170,0,0);P.id=id;P.spd=d.sp;P.trn=d.turn;P.tr=d.tr;P.br=d.br;PEN=d.pen;
+if(m){const[x,z]=mpSpot();P.x=x;P.z=z;place(P)}else fillEnemies();
+inG=0;btl={k:0,sl:0,rp:0};document.body.classList.remove('gar');$('gui').style.display='none';$('tree').style.display='none';save();yaw=0;pit=.12;S.length=0;started=1;$('start').style.display='none';$('bt').style.display='block';try{R.domElement.requestPointerLock()}catch(e){}}
+function toGarage(){if(MP.on||MP.c)mpLeave();started=0;down=0;mgDown=0;try{document.exitPointerLock()}catch(e){}$('bt').style.display='none';save();showScreen('garage',sum())}
+function wreck(){if(P.dead)return;P.dead=1;started=0;down=0;mgDown=0;boom(P.g.position.clone().setY(P.g.position.y+2),6);P.g.visible=false;SV.dead[P.id]=1;save();
+try{document.exitPointerLock()}catch(e){}$('bt').style.display='none';toast('This tank was destroyed');setTimeout(()=>showScreen('garage','This tank was destroyed. Please choose another tank. '+sum()),1200)}
+$('bt').onclick=toGarage;
+function upShells(dt){for(let i=S.length-1;i>=0;i--){const s=S[i],n=Math.ceil(dt/.01),h=dt/n;let alive=1;
+for(let k=0;k<n&&alive;k++){const p0=s.p.clone();s.v.y-=9.8*h;s.p.addScaledVector(s.v,h);s.t+=h;const seg=s.p.clone().sub(p0),len=seg.length();s.dist+=len;
+RC.set(p0,seg.normalize());RC.far=len;const hit=s.vis?null:RC.intersectObjects(s.en?OBM.concat(P.ms):TG,false)[0];
+if(hit)alive=impact(s,hit,seg);else if(s.p.y<hf(s.p.x,s.p.z)||Math.abs(s.p.x)>260||Math.abs(s.p.z)>260||s.t>8){boom(s.p,2,0xaa8855);alive=0}}
+s.m.position.copy(s.p);s.m.lookAt(s.p.clone().add(s.v));if(!alive){sc.remove(s.m);S.splice(i,1)}}}
+function upFX(dt){for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.life-=dt;f.m.scale.setScalar(.3+f.s*(1-f.life*2));f.m.material.opacity=Math.max(0,f.life*1.8);if(f.life<=0){sc.remove(f.m);FX.splice(i,1)}}}
+/* ---------- Multiplayer ---------- */
+function LOAD(m,p){$('ld').style.display='flex';$('ldm').textContent=m;$('ldb').style.width=p+'%'}
+function LOADOFF(){$('ld').style.display='none'}
+function mpSend(c,d){if(MP.c&&MP.on){try{MP.c.raiseEvent(c,d)}catch(e){}}}
+/* Events: 1=state 2=hit (to: target, dmg, by) 3=destroyed (by: killer, n, br) 4=shell visual */
+function mpRecv(c,d,nr){if(!d)return;
+ if(c===1){let t=MP.rem.get(nr);
+  if(!t){const o=PT[d.id];if(!o)return;t=mkUnit(o.o,d.x,d.z,d.h,0);t.remote=1;t.nr=nr;MP.rem.set(nr,t);TG.push(...t.ms)}
+  t.nm=d.n;t.br=d.br;t.tx=d.x;t.tz=d.z;t.th=d.h;t.tty=d.ty;t.tep=d.ep;
+  const dead=!!d.dead;if(dead!==!!t.dead){t.dead=dead?1:0;t.g.visible=!dead;if(dead)t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});else TG.push(...t.ms)}
+ }
+ else if(c===2){if(d.to===MP.nr&&!P.dead){P.hp-=d.dmg;toast('Hit! -'+d.dmg);if(P.hp<=0)mpDie(d.by)}}
+ else if(c===3){if(d.by===MP.nr)mpReward(d.br);else toast((d.n||'Enemy')+' was destroyed')}
+ else if(c===4)shootVis(d)}
+function mpReward(br){const b=br||3,s=Math.round(120+b*60),r=Math.round(60+b*30);SV.kills++;SV.sl+=s;SV.rp+=r;btl.k++;btl.sl+=s;btl.rp+=r;save();toast('Destroyed! +'+s+' SL / +'+r+' RP')}
+function mpDie(by){if(P.dead)return;P.dead=1;boom(P.g.position.clone().setY(P.g.position.y+2),6);mpSend(3,{by:by,n:MP.name,br:P.br});toast('You were destroyed. Respawning in 4 seconds…');setTimeout(mpRespawn,4000)}
+function mpRespawn(){if(!MP.on)return;const[x,z]=mpSpot();P.x=x;P.z=z;P.hp=100;P.dead=0;P.g.visible=true;place(P);toast('Respawned')}
+function mpRemove(nr){const t=MP.rem.get(nr);if(!t)return;sc.remove(t.g);t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});MP.rem.delete(nr)}
+function mpLeave(){MP.on=0;const c=MP.c;MP.c=null;if(c){try{c.disconnect()}catch(e){}}[...MP.rem.keys()].forEach(mpRemove);P.dead=0}
+function mpFail(m){LOAD(m,100);mpLeave();setTimeout(()=>{LOADOFF();showScreen('garage',m)},2200)}
+let mpTimer=0;
+function mpSpot(){let x,z,n=0;do{[x,z]=rp()}while(blk(x,z)&&++n<50);return[x,z]}
+function mpWatch(){clearTimeout(mpTimer);mpTimer=setTimeout(()=>{if(!MP.on)mpFail('Connection timed out. Check your App ID, the SDK loading, and your network.')},15000)}
+/* Loads the Photon library only when MULTIPLAYER is tapped, so the game starts even if it fails */
+function loadPhoton(cb){
+ LOAD('Loading multiplayer…',5);
+ window.module={exports:{}};
+ const s=document.createElement('script');
+ s.src='https://cdn.jsdelivr.net/npm/photon-realtime@4.4.0/photon-realtime-module.js';
+ s.onload=()=>{try{Photon.PhotonPeer.setWebSocketImpl(window.WebSocket);cb()}catch(e){mpFail('Multiplayer library failed to start')}};
+ s.onerror=()=>{LOAD('Could not load multiplayer. Check your connection.',100);setTimeout(()=>{LOADOFF();renderGarage('Could not load multiplayer')},2200)};
+ document.head.appendChild(s);
+}
+function mpStart(){
+ if(MP.on||MP.c)return;
+ if(typeof Photon==='undefined'){loadPhoton(mpStart);return}
+ if(/^PASTE/.test(PHOTON.appId)){LOAD('Photon App ID is not set',0);setTimeout(()=>{LOADOFF();renderGarage('Please set PHOTON.appId')},2200);return}
+ clearEnemies();MP.rem.clear();MP.name=U;MP.last=0;
+ $('ldt').textContent=TIPS[Math.random()*TIPS.length|0];
+ const LB=Photon.LoadBalancing.LoadBalancingClient,ST=LB.State;
+ class C extends LB{
+  constructor(){super(Photon.ConnectionProtocol.Wss,PHOTON.appId,PHOTON.appVersion)}
+  onStateChange(s){if(s===ST.ConnectedToMaster){LOAD('Searching for a battle room…',40);this.joinRandomOrCreateRoom()}}
+  onJoinRoom(){clearTimeout(mpTimer);MP.nr=this.myActor().actorNr;try{this.myActor().setName(MP.name)}catch(e){}MP.on=1;LOAD('Building the battlefield…',75);deploy(SV.sel,1);LOAD('Ready',100);setTimeout(LOADOFF,400)}
+  onEvent(c,d,nr){mpRecv(c,d,nr)}
+  onActorLeave(a){mpRemove(a.actorNr!==undefined?a.actorNr:a)}
+  onError(c,m){mpFail('Error: '+m)}
+ }
+ LOAD('Connecting to Photon…',15);mpWatch();
+ MP.c=new C();
+ try{MP.c.connectToRegionMaster(PHOTON.region)}catch(e){mpFail('Connection failed: '+e.message)}
+}
+/* ---------- Input ---------- */
+let started=0,yaw=0,pit=.12,down=0,rmb=0,fov=60,jx=0,jy=0,scTog=0,mgDown=0;const keys={};
+addEventListener('keydown',e=>keys[e.code]=1);addEventListener('keyup',e=>keys[e.code]=0);
+addEventListener('mousemove',e=>{if(!started)return;const k=.0022*fov/60;yaw-=e.movementX*k;pit=cl(pit-e.movementY*k,-.25,.5)});
+addEventListener('mousedown',e=>{if(!started)return;if(e.button==0)down=1;if(e.button==2)rmb=1});
+addEventListener('mouseup',e=>{if(e.button==0)down=0;if(e.button==2)rmb=0});
+addEventListener('contextmenu',e=>e.preventDefault());
+/* Touch controls: left = joystick (move/turn) / drag right half = turret and camera / FIRE, MG, SCOPE */
+addEventListener('pointerdown',e=>{if(e.pointerType=='touch')document.body.classList.add('touch')},true);
+(function(){const ta=$('ta'),js=$('js'),kn=$('kn');let ap=null,lx=0,ly=0,jp=null;
+ta.onpointerdown=e=>{ap=e.pointerId;lx=e.clientX;ly=e.clientY;ta.setPointerCapture(ap)};
+ta.onpointermove=e=>{if(e.pointerId!=ap||!started)return;const k=.006*fov/60;yaw-=(e.clientX-lx)*k;pit=cl(pit-(e.clientY-ly)*k,-.25,.5);lx=e.clientX;ly=e.clientY};
+ta.onpointerup=ta.onpointercancel=e=>{if(e.pointerId==ap)ap=null};
+const jm=e=>{const r=js.getBoundingClientRect();let x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2);const m=Math.hypot(x,y);if(m>1){x/=m;y/=m}jx=x;jy=y;kn.style.transform='translate('+x*38+'px,'+y*38+'px)'};
+js.onpointerdown=e=>{jp=e.pointerId;js.setPointerCapture(jp);jm(e)};js.onpointermove=e=>{if(e.pointerId==jp)jm(e)};
+js.onpointerup=js.onpointercancel=e=>{if(e.pointerId==jp){jp=null;jx=jy=0;kn.style.transform=''}};
+const hold=(id,f)=>{const b=$(id);b.onpointerdown=()=>f(1);b.onpointerup=b.onpointercancel=b.onpointerleave=()=>f(0)};
+hold('fb',v=>down=v);hold('mb',v=>mgDown=v);$('sb').onpointerdown=()=>scTog^=1})();
+document.addEventListener('click',()=>{if(started&&!document.pointerLockElement)try{R.domElement.requestPointerLock()}catch(e){}});
+/* ---------- Main loop ---------- */
+function aimRay(){const o=cam.position,d=new THREE.Vector3();cam.getWorldDirection(d);RC.set(o,d);RC.far=700;let hit=RC.intersectObjects(TG,false)[0],td=hit?hit.distance:700;
+for(let s=4;s<td;s+=2){const x=o.x+d.x*s,z=o.z+d.z*s;if(Math.abs(x)<250&&Math.abs(z)<250&&o.y+d.y*s<hf(x,z)){td=s;hit=null;break}}
+return{pt:o.clone().addScaledVector(d,td),td,hit,d}}
+const scr=(v)=>{v=v.clone().project(cam);return[(v.x*.5+.5)*cw,(-v.y*.5+.5)*ch,v.z<1]};
+let last=0;
+function loop(ts){requestAnimationFrame(loop);rs();const dt=Math.min(.05,(ts-last)/1000||0);last=ts;const scope=started&&(keys.ShiftLeft||keys.ShiftRight||rmb||scTog);
+if(started&&!P.dead){const f=cl((keys.KeyW?1:0)-(keys.KeyS?.5:0)-jy,-.5,1),tn=cl((keys.KeyA?1:0)-(keys.KeyD?1:0)-jx,-1,1);P.h+=tn*(P.trn||.9)*dt;const sp=(P.spd||9)*f*dt,dx=Math.sin(P.h)*sp,dz=Math.cos(P.h)*sp;if(!blk(P.x+dx,P.z))P.x+=dx;if(!blk(P.x,P.z+dz))P.z+=dz}
+EN.forEach(t=>{if(t.dead)return;t.h+=t.sp*dt;const dx=P.x-t.x,dz=P.z-t.z,dd=Math.hypot(dx,dz),az=Math.atan2(dx,dz);
+if(started&&dd<230){t.ty+=cl(wr(az-t.ty),-.9*dt,.9*dt);t.ep+=cl(cl(Math.atan2(P.g.position.y-t.g.position.y-.5+.5*9.8*(dd/V0)**2,dd),-.14,.3)-t.ep,-.4*dt,.4*dt);t.rl-=dt;
+if(t.rl<=0&&Math.abs(wr(az-t.ty))<.06){shoot(t,{v:V0,pen:t.o.pen||300,en:1,sp:.008+dd*.00005});t.rl=rnd(6,9);t.rc=1}}
+else t.ty=t.h+Math.sin(ts/2500+t.sp*40)*.6;t.rc=Math.max(0,t.rc-dt*2.5);place(t)});
+/* Multiplayer: interpolate remote tanks / send own state (every 100ms) */
+MP.rem.forEach(t=>{if(t.dead)return;const k=Math.min(1,dt*10);t.x+=(t.tx-t.x)*k;t.z+=(t.tz-t.z)*k;t.h+=wr(t.th-t.h)*k;t.ty+=wr(t.tty-t.ty)*k;t.ep+=(t.tep-t.ep)*k;place(t)});
+if(MP.on&&ts-MP.last>100){MP.last=ts;mpSend(1,{n:MP.name,id:P.id,br:P.br,x:P.x,z:P.z,h:P.h,ty:P.ty,ep:P.ep,hp:P.hp,dead:P.dead?1:0})}
+/* Camera: third-person (turret follows camera direction) / scope (near muzzle, zoomed) */
+const tf=scope?7:60;if(Math.abs(fov-tf)>.05){fov+=(tf-fov)*Math.min(1,dt*10);cam.fov=fov;cam.updateProjectionMatrix()}
+const sy=scope?.0018*(Math.sin(ts/610)+.6*Math.sin(ts/170)):0,sp2=scope?.0014*(Math.sin(ts/480+1)+.6*Math.cos(ts/150)):0,yy=yaw+sy,pp=pit+sp2,d=new THREE.Vector3(Math.sin(yy)*Math.cos(pp),Math.sin(pp),Math.cos(yy)*Math.cos(pp));P.g.visible=!P.dead&&!(scope&&fov<30);
+if(scope){const gp=new THREE.Vector3();P.gun.getWorldPosition(gp);cam.position.copy(gp).add(new THREE.Vector3(0,.35,0))}
+else{const pv=new THREE.Vector3(P.x,hf(P.x,P.z)+3.4,P.z);cam.position.copy(pv).addScaledVector(d,-15);cam.position.y=Math.max(cam.position.y,hf(cam.position.x,cam.position.z)+1.5)}
+cam.lookAt(cam.position.clone().add(d));cam.updateMatrixWorld();
+const ar=aimRay(),g0=new THREE.Vector3();P.gun.getWorldPosition(g0);
+const ddx=ar.pt.x-g0.x,ddz=ar.pt.z-g0.z,hd=Math.hypot(ddx,ddz),drop=scope?0:.5*9.8*(hd/V0)**2,el=Math.atan2(ar.pt.y-g0.y+drop,Math.max(hd,1));
+const trv=P.tr||.8;P.ty+=cl(wr(Math.atan2(ddx,ddz)-P.ty)*Math.min(1,dt*2.5),-trv*dt,trv*dt);P.ep+=cl((cl(el,-.14,.35)-P.ep)*Math.min(1,dt*2.5),-trv*.45*dt,trv*.45*dt);P.rc=Math.max(0,P.rc-dt*2.5);P.rl=Math.max(0,P.rl-dt);P.ml=Math.max(0,P.ml-dt);place(P);
+const mq=new THREE.Quaternion(),md=new THREE.Vector3(0,0,1),mp=new THREE.Vector3();P.muz.getWorldPosition(mp);P.muz.getWorldQuaternion(mq);md.applyQuaternion(mq);
+if(started&&down&&P.rl<=0&&!P.dead){shoot(P,{v:V0,pen:PEN});P.rl=RLD;P.rc=1}
+if(started&&(keys.Space||mgDown)&&P.ml<=0&&!P.dead){shoot(P,{v:850,pen:22,mg:1,sp:.012});P.ml=.1}
+upShells(dt);upFX(dt);
+/* HUD / penetration indicator / barrel direction marker */
+const pi=$('pi');RC.set(mp,md);RC.far=700;let h=RC.intersectObjects(TG,false)[0];if(h){for(let s=4;s<h.distance;s+=3){if(mp.y+md.y*s<hf(mp.x+md.x*s,mp.z+md.z*s)){h=null;break}}}
+if(h&&h.object.userData.tank&&!h.object.userData.tank.dead&&started){const c=calc(h,md,h.distance),q=scr(h.point);pi.style.display='block';pi.className=cls(c);pi.style.left=q[0]+'px';pi.style.top=q[1]+'px';
+$('pt').textContent=(h.object.userData.tank.nm||'')+' BR '+h.object.userData.tank.br+'　Effective armor '+(c.eff|0)+'mm (actual '+c.base+'mm / angle '+((c.ang*57.3)|0)+'°)　Penetration '+(c.pen|0)+'mm'+(c.rico?' [ricochet]':'')}
+else{pi.style.display='none';$('pt').textContent=''}
+const gq=scr(mp.clone().addScaledVector(md,ar.td).setY(mp.y+md.y*ar.td-.5*9.8*(ar.td/V0)**2)),gm=$('gm');gm.style.display=scope||!gq[2]?'none':'block';gm.style.left=gq[0]+'px';gm.style.top=gq[1]+'px';
+$('scope').style.display=scope&&fov<30?'block':'none';$('cd').style.display=scope&&fov<30?'none':'block';
+$('hl').innerHTML=(MP.on?'<b>MULTIPLAYER</b> '+(MP.rem.size+1)+' players<br>':'')+(PT[P.id]?PT[P.id].n+'　HP '+Math.max(0,P.hp|0)+'<br>':'')+'Shell: '+(PT[P.id]?PT[P.id].sh:'')+' (penetration '+PEN+'mm) / Velocity '+V0+'m/s<br>Range '+(ar.td|0)+'m　Kills '+(SV?SV.kills:0)+'<div id="rb"><i style="width:'+(100-P.rl/RLD*100)+'%"></i></div>'+(P.rl>0?'Reloading '+P.rl.toFixed(1)+'s':'Ready to fire');
+if(inG&&GT){GT.g.rotation.y=ts/5500;GT.tu.rotation.y=Math.sin(ts/2200)*.4}
+R.render(inG?gsc:sc,inG?gcam:cam)}
+/* ---------- WT-style garage / tech tree / economy ---------- */
+function tst(id){const t=PT[id];if(SV.own[id])return 'own';const r=SV.res[id]||0;if(r>=t.rp)return 'buy';if(t.par&&!(SV.own[t.par]||(SV.res[t.par]||0)>=PT[t.par].rp))return 'lock';return r>0?'ing':'rd'}
+const TL={own:'Owned',buy:'Available to buy',lock:'Locked 🔒',ing:'Researching',rd:'Research needed'};
+function research(id){const s=tst(id);if(s!='rd'&&s!='ing')return;const t=PT[id],n=Math.min(SV.rp,t.rp-(SV.res[id]||0));if(n<=0)return;SV.res[id]=(SV.res[id]||0)+n;SV.rp-=n;save();renderTree()}
+function buyTank(id){const t=PT[id];if(tst(id)!='buy'||SV.sl<t.ls)return;SV.sl-=t.ls;SV.own[id]=1;SV.sel=id;SV.nat=t.nat;save();renderTree()}
+function renderTree(){const el=$('tree');el.style.display='flex';
+let h='<div class=th><b>Research</b> 🪙 '+SV.sl+' SL / 🔬 '+SV.rp+' RP <span>'+Object.keys(NATN).map(n=>'<button class=tab'+(n==SV.nat?'-on':'')+' data-n='+n+'>'+NATN[n]+'</button>').join('')+'</span><button id=tx>Close</button></div><div class=chain>';
+h+=Object.keys(PT).filter(i=>PT[i].nat==SV.nat).map((i,k)=>{const t=PT[i],s=tst(i),r=SV.res[i]||0;return (k?'<div class=ar>➡</div>':'')+'<div class=nd-'+s+'><b>'+t.n+'</b><br>BR '+t.br.toFixed(1)+'<br>'+TL[s]+(s=='ing'?' '+r+'/'+t.rp:'')+'<br>'+(s=='rd'||s=='ing'?'<button data-r='+i+'>Research RP '+(t.rp-r)+'</button>':s=='buy'?'<button data-b='+i+'>Buy SL '+t.ls+'</button>':'')+'</div>'}).join('')+'</div>';
+el.innerHTML=h;el.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{SV.nat=b.dataset.n;renderTree()});el.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>research(b.dataset.r));el.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>buyTank(b.dataset.b));
+$('tx').onclick=()=>{el.style.display='none';renderGarage()}}
+function renderGarage(msg){inG=1;document.body.classList.add('gar');$('start').style.display='none';$('tree').style.display='none';
+if(!SV.own[SV.sel])SV.sel=Object.keys(SV.own)[0];
+const el=$('gui'),t=PT[SV.sel],dead=SV.dead[SV.sel],own=Object.keys(PT).filter(i=>SV.own[i]),alive=own.some(i=>!SV.dead[i]),rcost=q=>Math.round(100+q.br*30);
+showTank(SV.sel);el.style.display='flex';
+el.innerHTML=`<div class=tb><div class=tl><b>${esc(U)}</b><br>BR ${t.br.toFixed(1)}</div><div class=mid><button class=battle id=go${dead?' disabled':''}>TO BATTLE!</button><button class=mpb id=mpb${dead?' disabled':''}>MULTIPLAYER</button></div><div class=tr2>🪙 ${SV.sl} SL　🔬 ${SV.rp} RP<br><button id=rs>Research</button> <button id=lo>Log out</button></div></div>`
++`<div class=info>${msg?'<span class=wr>'+msg+'</span><br>':''}${alive?'':'<span class=wr>GAME OVER — all tanks destroyed</span> <button id=ra>Repair all tanks for free</button><br>'}<b>${t.n}</b>　BR ${t.br.toFixed(1)}　Armor front ${t.o.arm.front} / side ${t.o.arm.side} / rear ${t.o.arm.rear}mm　Penetration ${t.pen}mm (${t.sh})　Speed ${t.sp}${dead?'　<span class=wr>Destroyed</span>':''}</div>`
++`<div class=slots>${own.map(i=>{const q=PT[i],d=SV.dead[i];return `<div class=${i==SV.sel?'slot-on':'slot'} data-s=${i}><b>${q.n}</b><br>BR ${q.br.toFixed(1)}<br>${d?`🔴 Destroyed <button data-f=${i}>Repair ${rcost(q)} SL</button>`:'🟢 Ready'}</div>`}).join('')}</div>`;
+$('go').onclick=()=>{if(!dead)deploy(SV.sel)};$('mpb').onclick=()=>{if(!dead)mpStart()};$('rs').onclick=()=>renderTree();$('lo').onclick=()=>{save();U=null;SV=null;el.style.display='none';showScreen('login')};
+if($('ra'))$('ra').onclick=()=>{SV.dead={};save();renderGarage()};
+el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{SV.sel=b.dataset.s;save();renderGarage()});
+el.querySelectorAll('[data-f]').forEach(b=>b.onclick=e=>{e.stopPropagation();const c=rcost(PT[b.dataset.f]);if(SV.sl>=c){SV.sl-=c;delete SV.dead[b.dataset.f];save();renderGarage()}else renderGarage('Not enough SL')})}
+showScreen('login');requestAnimationFrame(loop);
+};
+</script>
+</body></html>
