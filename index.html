@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>Armor Strike</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* ---------- On-screen error box (red bar at top) ---------- */
+window.DBG=[];
+function dbg(m){try{DBG.push(String(m));let b=document.getElementById('dbgbox');if(!b){b=document.createElement('div');b.id='dbgbox';b.style.cssText='position:fixed;left:0;right:0;top:0;max-height:45vh;overflow:auto;background:#3a0a0af0;color:#ffb0b0;font:12px/1.4 monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-word;border-bottom:2px solid #f44';(document.body||document.documentElement).appendChild(b)}b.textContent=DBG.join('\n')}catch(e){}}
+window.addEventListener('error',e=>{if(e.target&&e.target!==window&&(e.target.src||e.target.href)){dbg('FAILED TO LOAD: '+(e.target.src||e.target.href));return}dbg('SCRIPT ERROR: '+e.message+' (line '+e.lineno+')')},true);
+window.addEventListener('error',e=>{if(e.message)dbg('SCRIPT ERROR: '+e.message+' (line '+e.lineno+')')});
+window.addEventListener('unhandledrejection',e=>dbg('PROMISE ERROR: '+((e.reason&&e.reason.message)||e.reason)));
+dbg('1. Page started');
+</script>
 <style>
 :root{--bg:#9ec6e6;--fg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a2430}}
@@ -75,8 +84,8 @@ body.gar .o,body.gar #pi,body.gar #scope,body.gar #tc,body.gar #bt{display:none!
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+dbg(typeof THREE==='undefined'?'2. Three.js NOT loaded':'2. Three.js loaded OK');
 if(typeof THREE==='undefined')$('start').innerHTML='Failed to load Three.js. Check your network connection.';
-window.onerror=(m,s,l)=>{$('start').style.display='flex';$('start').innerHTML='Error: '+m+' (line '+l+')'};
 let PEN=330;const V0=700,RLD=4,wr=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a},cl=(a,b,c)=>Math.max(b,Math.min(c,a));
 /* ---------- Multiplayer settings ---------- */
 const PHOTON={appId:'709a409d-8826-441c-a368-2dbe05f079e1',appVersion:'1.0.0',region:'jp'};
@@ -84,6 +93,7 @@ const MP={c:null,on:0,nr:0,name:'',rem:new Map(),last:0};
 const TIPS=['The turret rotates faster than the hull.','The sides are thin, so angled shots are more likely to penetrate.','Scope view has no bullet drop compensation.','Destroying a tank gives you SL and RP.','In multiplayer, a destroyed tank respawns after a few seconds.'];
 /* ---------- Scene / lights / camera ---------- */
 const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));document.body.prepend(R.domElement);
+dbg('3. WebGL renderer created OK');
 const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,1,.3,900),RC=new THREE.Raycaster();
 sc.background=new THREE.Color(0x9ec6e6);sc.fog=new THREE.Fog(0x9ec6e6,200,650);
 sc.add(new THREE.HemisphereLight(0xffffff,0x556b3a,.85));const sun=new THREE.DirectionalLight(0xfff2d8,.9);sun.position.set(120,200,80);sc.add(sun);
@@ -102,6 +112,7 @@ const hf=(x,z)=>6*Math.sin(x*.018)*Math.cos(z*.021)+3.5*Math.sin(x*.045+z*.03)+2
 {const g=new THREE.PlaneGeometry(500,500,125,125);g.rotateX(-Math.PI/2);const p=g.attributes.position,c=new Float32Array(p.count*3),a=new THREE.Color(0x5a7a3a),b=new THREE.Color(0x9a8a60),k=new THREE.Color();
 for(let i=0;i<p.count;i++){const h=hf(p.getX(i),p.getZ(i));p.setY(i,h);k.copy(a).lerp(b,cl((h+4)/14+Math.random()*.12,0,1));c.set([k.r,k.g,k.b],i*3)}
 g.setAttribute('color',new THREE.BufferAttribute(c,3));g.computeVertexNormals();sc.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true})))}
+dbg('4. Terrain built OK');
 /* ---------- Cover (rocks, buildings, walls) ---------- */
 const TG=[],OBM=[],OB=[],ML=c=>new THREE.MeshLambertMaterial({color:c,flatShading:true});
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -111,6 +122,7 @@ for(let i=0;i<16;i++){const[x,z]=rp(),s=rnd(2,6),m=new THREE.Mesh(new THREE.Icos
 for(let i=0;i<8;i++){const[x,z]=rp(),w=rnd(8,14),d=rnd(8,14),h=rnd(6,14),y=hf(x,z),m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ML(0x9a948a)),r=new THREE.Mesh(new THREE.BoxGeometry(w+1,.8,d+1),ML(0x5a3a2a));m.position.set(x,y+h/2-1,z);r.position.set(x,y+h-.6,z);reg(m,Math.hypot(w,d)*.5);reg(r)}
 for(let i=0;i<3;i++){const[x,z]=rp(),a=rnd(0,3);for(let j=0;j<6;j++){const px=x+Math.cos(a)*j*4,pz=z+Math.sin(a)*j*4,m=new THREE.Mesh(new THREE.BoxGeometry(4.2,3,.8),ML(0x8a8070));m.position.set(px,hf(px,pz)+1.3,pz);m.rotation.y=-a;reg(m,2.2)}}
 const blk=(x,z)=>{if(Math.abs(x)>235||Math.abs(z)>235)return 1;for(const o of OB)if(Math.hypot(x-o.x,z-o.z)<o.r+3.6)return 1;return 0};
+dbg('5. Cover built OK');
 /* ---------- Detailed tank model ---------- */
 /* Model hierarchy: g (hull root) → 2 track Groups / hull (extruded shape) / tu (turret rotation axis) → gun (base of barrel = rotation axis) → muz (muzzle) */
 function mkTank(o){const g=new THREE.Group(),ms=[],{L,W,H,col,bl,tw}=o,sl=o.sl||1.6,dk=0x262626,
@@ -164,13 +176,4 @@ T('chiha','JP','Type 97 Chi-Ha',1.0,null,0,0,10,1,.7,60,'AP',O(5.5,2.3,2.1,0x7a6
 T('chinu','JP','Type 3 Chi-Nu',3.3,'chiha',500,1500,10,1,.6,120,'APHE',O(5.8,2.4,2.2,0x7a6a3a,4,2.1,6,.8,.9,1,50,35,25,50));
 T('t61','JP','Type 61',8.0,'chinu',3000,12000,10,.9,.7,300,'APDS',O(7,3,2.2,0x5f6a3a,5.5,2.4,6,1.5,1,0,160,70,45,200));
 T('t74','JP','Type 74',9.7,'t61',4200,18000,10.5,1,.8,340,'APFSDS',O(7.2,3.2,2.1,0x5f6a3a,5.8,2.4,6,1.6,1.05,0,260,90,50,300));
-T('t90','JP','Type 90',11.3,'t74',5800,30000,13,1.2,.9,400,'APFSDS',O(7.4,3.3,2,0x5f6a3a,6.2,2.3,7,1.7,1.1,0,340,100,50,380));
-/* ★ Added: Soviet tree */
-T('t34_76','SU','T-34-76',2.3,null,0,0,10,1,.6,130,'APHE',O(6.1,3,2.4,0x4f6a3a,4.4,2.2,6,.8,.9,0,45,45,30,60));
-T('t34_85','SU','T-34-85',3.7,'t34_76',600,1800,10,.9,.6,180,'APCBC',O(6.3,3,2.5,0x4f6a3a,5.2,2.3,6,.9,.9,0,90,50,40,90));
-T('is2','SU','IS-2',5.7,'t34_85',2200,8000,8,.7,.5,210,'APCBC',O(6.8,3.1,2.5,0x4f6a3a,6.1,2.6,7,.4,1.1,0,130,90,60,160));
-T('t62','SU','T-62',8.8,'is2',4500,16000,9,.9,.7,330,'APFSDS',O(6.9,3.4,2.2,0x4a5a3a,5.9,2.6,6,1.5,1.05,0,250,80,50,260));
-/* ★ End of additions */
-const PT0={abrams:{n:'M1 Abrams',d:'Balanced',sp:9.5,turn:.9,br:11.7,pen:420,sh:'APFSDS',tr:.8,o:{L:7.6,W:3.6,H:2.1,col:0x5a5d3a,bl:6.4,tw:2.5,sl:1.8,arm:{front:450,side:150,rear:60,turret:500}}},
-tiger:{n:'Tiger I',d:'Heavy armor',sp:6.5,turn:.7,br:5.7,pen:210,sh:'APCBC',tr:.5,o:{L:6.9,W:3.7,H:2.5,col:0x8f7f55,bl:6.8,tw:2.6,sl:.5,arm:{front:260,side:130,rear:80,turret:280}}},
-type90:{n:'Type 90',d:'High mobility',sp:13,turn:1.2,br:11.3,pen:400,sh:'APFSDS',tr:.9,o:{L:7.
+T('t90','JP','Type 90',11.3,'
