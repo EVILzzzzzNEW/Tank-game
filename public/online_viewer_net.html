@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Armor Strike</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#9ec6e6;--fg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a2430}}
+:root[data-theme="dark"]{--bg:#1a2430}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;overflow:hidden}
+canvas{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;display:block}
+.o{position:fixed;pointer-events:none;text-shadow:0 1px 3px #000}
+#hl{left:12px;top:12px;font-size:13px;line-height:1.6}
+#rb{width:160px;height:8px;background:#0008;border:1px solid #fff6;margin-top:4px}#rb i{display:block;height:100%;background:#fc3}
+#hint{left:12px;bottom:12px;font-size:12px;opacity:.85}
+#pt{left:50%;top:12px;transform:translateX(-50%);font-size:13px;font-weight:700}
+#ev{left:50%;top:26%;transform:translateX(-50%);font-size:26px;font-weight:700;color:#ffd040;text-align:center}
+#cd{left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:#fff;box-shadow:0 0 3px #000}
+#gm{width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid #fff;border-radius:50%;opacity:.8}
+#pi{position:fixed;width:30px;height:30px;border-radius:50%;border:4px solid;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;box-shadow:0 0 6px #000}
+#pi.g{border-color:#3f3;background:#3f33}#pi.y{border-color:#fd2;background:#fd23}#pi.r{border-color:#f44;background:#f443}
+#scope{position:fixed;inset:0;display:none;pointer-events:none;z-index:3;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 37vmin,#000 37.4vmin)}
+#scope:before,#scope:after{content:"";position:absolute;background:#000}
+#scope:before{left:0;right:0;top:50%;height:2px;margin-top:-1px}
+#scope:after{top:0;bottom:0;left:50%;width:2px;margin-left:-1px}
+#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#000c;z-index:9;font-size:16px;text-align:center;overflow:auto;padding:12px;box-sizing:border-box}
+#start small{font-size:12px;opacity:.85}
+.cards{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.card{background:#1b222cee;border:1px solid #fff4;border-radius:8px;padding:10px;width:200px;font-size:13px;line-height:1.7}
+.wr{color:#ff6040;font-weight:700}
+#start input{font-size:18px;padding:8px;border-radius:6px;border:1px solid #fff6;background:#111;color:#fff;text-align:center}
+#start button,#bt{font-size:15px;padding:8px 18px;border-radius:6px;border:1px solid #fff6;background:#2c5aa0;color:#fff;cursor:pointer}
+#start button:disabled{background:#444;color:#999;cursor:not-allowed}
+#gui,#tree{position:fixed;inset:0;display:none;z-index:8;flex-direction:column;justify-content:space-between;pointer-events:none;font-size:13px;text-shadow:0 1px 3px #000}
+#gui>*,#tree>*{pointer-events:auto}
+.tb{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px;background:linear-gradient(#000a,#0000)}
+.tl,.tr2{line-height:1.8;min-width:150px}.tr2{text-align:right}
+#gui button,#tree button{font-size:13px;padding:5px 12px;border-radius:5px;border:1px solid #fff6;background:#2c5aa0;color:#fff;cursor:pointer}
+#gui button.battle{font-size:20px;font-weight:700;padding:10px 40px;background:#c62828;border:2px solid #ff8a80;letter-spacing:.08em}
+#gui .mid{display:flex;flex-direction:column;align-items:center;gap:8px}
+#gui button.mpb{font-size:16px;padding:8px 26px;background:#2e7d32;border:2px solid #a5d6a7}
+#gui button:disabled{background:#555;border-color:#888;color:#aaa;cursor:not-allowed}
+.info{align-self:center;background:#000a;padding:6px 14px;border-radius:6px;margin-bottom:8px;text-align:center;max-width:94%}
+.slots{display:flex;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));overflow-x:auto;background:linear-gradient(#0000,#000b)}
+.slot,.slot-on{flex:0 0 150px;background:#1b222cdd;border:2px solid #fff3;border-radius:6px;padding:8px;line-height:1.7;cursor:pointer;font-size:12px}.slot-on{border-color:#ffc107}
+#tree{background:#0a0e14f0;justify-content:flex-start;padding:12px;gap:14px;overflow:auto}
+.th{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.th span{display:flex;gap:6px}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ar{font-size:24px}
+[class^=nd-]{width:150px;background:#1b222c;border:2px solid #fff4;border-radius:6px;padding:8px;line-height:1.7;font-size:12px}
+.nd-lock{opacity:.4}.nd-rd,.nd-ing{border-color:#ffc107}.nd-buy{border-color:#4caf50}.nd-own{border-color:#42a5f5}
+.tab-on{background:#ffc107!important;color:#000!important}
+body.gar .o,body.gar #pi,body.gar #scope,body.gar #tc,body.gar #bt{display:none!important}
+#bt{position:fixed;right:12px;top:12px;display:none;z-index:6;padding:6px 12px;font-size:13px}
+#tc{display:none;position:fixed;inset:0;pointer-events:none;z-index:5;touch-action:none}body.touch #tc{display:block}body.touch #hint{display:none}
+#tc>*{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+#ta{position:absolute;right:0;top:0;width:55%;height:100%}
+#js{position:absolute;left:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:130px;height:130px;border-radius:50%;background:#fff3;border:2px solid #fff8}
+#kn{position:absolute;left:45px;top:45px;width:40px;height:40px;border-radius:50%;background:#fffb;pointer-events:none}
+#fb,#mb,#sb{position:absolute;border-radius:50%;border:2px solid #fff8;color:#fff;font-weight:700;padding:0;font-size:13px}
+#fb{right:20px;bottom:calc(30px + env(safe-area-inset-bottom,0px));width:96px;height:96px;background:#e0452cb0;font-size:16px}
+#mb{right:128px;bottom:calc(36px + env(safe-area-inset-bottom,0px));width:68px;height:68px;background:#e0a02cb0}
+#sb{right:36px;bottom:calc(140px + env(safe-area-inset-bottom,0px));width:68px;height:68px;background:#2c7be0b0}
+/* Loading screen */
+#ld{position:fixed;inset:0;display:none;z-index:20;background:#0b1118;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;font-size:15px;padding:20px;box-sizing:border-box;text-align:center}
+#ld .sp{width:56px;height:56px;border:6px solid #fff3;border-top-color:#ffc107;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ldbar{width:260px;max-width:80vw;height:10px;background:#fff2;border-radius:5px;overflow:hidden}
+#ldb{display:block;height:100%;width:0;background:#ffc107;transition:width .3s}
+#ldt{max-width:360px;opacity:.8;font-size:13px;line-height:1.6}
+</style></head><body>
+<div id="hl" class="o"></div><div id="pt" class="o"></div><div id="ev" class="o"></div><div id="cd" class="o"></div><div id="gm" class="o"></div>
+<div id="hint" class="o">WASD: Move / Mouse: Rotate turret (click to lock) / Left click: Main gun / Right click or Shift: Scope</div>
+<div id="scope"></div><div id="pi"></div>
+<div id="tc"><div id="ta"></div><div id="js"><i id="kn"></i></div><button id="fb">FIRE</button><button id="mb">MG</button><button id="sb">SCOPE</button></div><button id="bt">Garage</button>
+<div id="start"></div><div id="gui"></div><div id="tree"></div>
+<div id="ld"><div class="sp"></div><div id="ldm">Loading…</div><div id="ldbar"><i id="ldb"></i></div><div id="ldt"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Photon Realtime SDK (adjusted for browser use) -->
+<script>var module={exports:{}};</script>
+<script src="https://cdn.jsdelivr.net/npm/photon-realtime@4.4.0/photon-realtime-module.js"></script>
+<script>Photon.PhotonPeer.setWebSocketImpl(window.WebSocket);</script>
+<script>
+const $=id=>document.getElementById(id);
+if(typeof THREE==='undefined')$('start').innerHTML='Failed to load Three.js. Check your network connection.';
+window.onerror=(m,s,l)=>{$('start').style.display='flex';$('start').innerHTML='Error: '+m+' (line '+l+')'};
+let PEN=330;const V0=700,RLD=4,wr=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a},cl=(a,b,c)=>Math.max(b,Math.min(c,a));
+/* ---------- Multiplayer settings ---------- */
+const PHOTON={appId:'709a409d-8826-441c-a368-2dbe05f079e1',appVersion:'1.0.0',region:'jp'};
+const MP={c:null,on:0,nr:0,name:'',rem:new Map(),last:0};
+const TIPS=['The turret rotates faster than the hull.','The sides are thin, so angled shots are more likely to penetrate.','Scope view has no bullet drop compensation.','Destroying a tank gives you SL and RP.','In multiplayer, a destroyed tank respawns after a few seconds.'];
+/* ---------- Scene / lights / camera ---------- */
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));document.body.prepend(R.domElement);
+const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,1,.3,900),RC=new THREE.Raycaster();
+sc.background=new THREE.Color(0x9ec6e6);sc.fog=new THREE.Fog(0x9ec6e6,200,650);
+sc.add(new THREE.HemisphereLight(0xffffff,0x556b3a,.85));const sun=new THREE.DirectionalLight(0xfff2d8,.9);sun.position.set(120,200,80);sc.add(sun);
+cam.position.set(0,12,-190);cam.lookAt(0,5,-170);
+const gsc=new THREE.Scene(),gcam=new THREE.PerspectiveCamera(40,1,.5,900);gcam.position.set(15,6.5,24);gcam.lookAt(0,2,0);gsc.background=new THREE.Color(0xa9c4d8);gsc.fog=new THREE.Fog(0xa9c4d8,80,480);
+let cw=0,ch=0;
+function rs(){const w=Math.max(1,document.documentElement.clientWidth||innerWidth),h=Math.max(1,document.documentElement.clientHeight||innerHeight);if(w==cw&&h==ch)return;cw=w;ch=h;R.setSize(w,h,false);cam.aspect=gcam.aspect=w/h;cam.updateProjectionMatrix();gcam.updateProjectionMatrix();$('scope').innerHTML=drawScope()}
+/* Scope reticle: milliradian marks (1 mil steps horizontally) + range holdover lines (2=200m to 10=1000m). No bullet drop compensation in scope. */
+function drawScope(){const k=ch/(7*Math.PI/180),x=cw/2,y=ch/2;let s='<svg width='+cw+' height='+ch+' style=position:absolute;inset:0 stroke=#000 fill=#000 font-size=11 font-family=sans-serif>';
+for(let m=-10;m<=10;m+=2)if(m){const px=x+m*.001*k;s+='<line x1='+px+' y1='+(y-5)+' x2='+px+' y2='+(y+5)+' stroke-width=1.5 />'}
+for(let d=200;d<=1000;d+=200){const py=y+.5*9.8*d/(V0*V0)*k;s+='<line x1='+(x-14)+' y1='+py+' x2='+(x+14)+' y2='+py+' stroke-width=1.5 /><text x='+(x+18)+' y='+(py+4)+' stroke=none>'+d/100+'</text>'}
+return s+'<circle cx='+x+' cy='+y+' r=2 /></svg>'}
+addEventListener('resize',rs);if(window.visualViewport)visualViewport.addEventListener('resize',rs);if(window.ResizeObserver)new ResizeObserver(rs).observe(document.documentElement);rs();
+/* ---------- Hilly terrain ---------- */
+const hf=(x,z)=>6*Math.sin(x*.018)*Math.cos(z*.021)+3.5*Math.sin(x*.045+z*.03)+2*Math.cos(z*.07-x*.02)+1.1*Math.sin(x*.11+z*.09)*Math.cos(x*.07-z*.13)+.5*Math.sin(x*.23)*Math.sin(z*.19);
+{const g=new THREE.PlaneGeometry(500,500,125,125);g.rotateX(-Math.PI/2);const p=g.attributes.position,c=new Float32Array(p.count*3),a=new THREE.Color(0x5a7a3a),b=new THREE.Color(0x9a8a60),k=new THREE.Color();
+for(let i=0;i<p.count;i++){const h=hf(p.getX(i),p.getZ(i));p.setY(i,h);k.copy(a).lerp(b,cl((h+4)/14+Math.random()*.12,0,1));c.set([k.r,k.g,k.b],i*3)}
+g.setAttribute('color',new THREE.BufferAttribute(c,3));g.computeVertexNormals();sc.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true})))}
+/* ---------- Cover (rocks, buildings, walls) ---------- */
+const TG=[],OBM=[],OB=[],ML=c=>new THREE.MeshLambertMaterial({color:c,flatShading:true});
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function rp(){let x,z;do{x=rnd(-210,210);z=rnd(-210,210)}while(Math.hypot(x,z+170)<30);return[x,z]}
+function reg(m,r){sc.add(m);TG.push(m);OBM.push(m);if(r)OB.push({x:m.position.x,z:m.position.z,r})}
+for(let i=0;i<16;i++){const[x,z]=rp(),s=rnd(2,6),m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,0),ML(0x7a7a72));m.scale.set(s,s*.7,s*.9);m.rotation.y=rnd(0,6);m.position.set(x,hf(x,z)+s*.25,z);reg(m,s*.9)}
+for(let i=0;i<8;i++){const[x,z]=rp(),w=rnd(8,14),d=rnd(8,14),h=rnd(6,14),y=hf(x,z),m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ML(0x9a948a)),r=new THREE.Mesh(new THREE.BoxGeometry(w+1,.8,d+1),ML(0x5a3a2a));m.position.set(x,y+h/2-1,z);r.position.set(x,y+h-.6,z);reg(m,Math.hypot(w,d)*.5);reg(r)}
+for(let i=0;i<3;i++){const[x,z]=rp(),a=rnd(0,3);for(let j=0;j<6;j++){const px=x+Math.cos(a)*j*4,pz=z+Math.sin(a)*j*4,m=new THREE.Mesh(new THREE.BoxGeometry(4.2,3,.8),ML(0x8a8070));m.position.set(px,hf(px,pz)+1.3,pz);m.rotation.y=-a;reg(m,2.2)}}
+const blk=(x,z)=>{if(Math.abs(x)>235||Math.abs(z)>235)return 1;for(const o of OB)if(Math.hypot(x-o.x,z-o.z)<o.r+3.6)return 1;return 0};
+/* ---------- Detailed tank model ---------- */
+/* Model hierarchy: g (hull root) → 2 track Groups / hull (extruded shape) / tu (turret rotation axis) → gun (base of barrel = rotation axis) → muz (muzzle) */
+function mkTank(o){const g=new THREE.Group(),ms=[],{L,W,H,col,bl,tw}=o,sl=o.sl||1.6,dk=0x262626,
+B=(w,h,l)=>new THREE.BoxGeometry(w,h,l),Cy=(a,b,h,s)=>new THREE.CylinderGeometry(a,b,h,s||14),
+add=(geo,c,x,y,z,p,tag)=>{const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:c,roughness:.72,metalness:.28}));m.position.set(x,y,z);(p||g).add(m);if(tag){m.userData.part=tag;ms.push(m)}return m},
+bar=(r1,r2,len,z0)=>{const q=new THREE.CylinderGeometry(r1,r2,len,12);q.translate(0,len/2+z0,0);q.rotateX(Math.PI/2);return q},
+ext=(pts,d)=>{const s=new THREE.Shape();pts.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1]));return new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:false})},
+side=(pts,d)=>{const q=ext(pts,d);q.rotateY(-Math.PI/2);q.translate(d/2,0,0);return q};
+const r=.55,cy=.6,z1=L/2-r,bp=[];for(let a=-90;a<=90;a+=30)bp.push([z1+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)]);for(let a=90;a<=270;a+=30)bp.push([-z1+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)]);
+[-1,1].forEach(s=>{const tr=new THREE.Group();tr.position.set(s*(W/2-.35),0,0);g.add(tr);
+add(side(bp,.7),0x222222,0,0,0,tr,'track');
+for(let i=0;i<14;i++)add(B(.74,.07,.2),0x3c3c3c,0,cy+r+.02,-z1+i*2*z1/13,tr);
+const nw=o.nw||6;for(let i=0;i<nw;i++){const z=-z1+.2+i*(2*z1-.4)/(nw-1);add(Cy(.38,.38,.9),0x3d3d3d,0,.45,z,tr).rotation.z=Math.PI/2;add(Cy(.2,.2,1.0,10),0x7a7a7a,0,.45,z,tr).rotation.z=Math.PI/2}
+add(Cy(.5,.5,.9,10),0x666666,0,.6,z1,tr).rotation.z=Math.PI/2;add(Cy(.42,.42,.9,10),0x555555,0,.6,-z1,tr).rotation.z=Math.PI/2;
+add(B(1.05,.1,L-.6),col,0,1.3,0,tr);add(B(.08,.7,L*.65),col,s*.5,.95,-.3,tr)});
+const y0=.7,hh=H*.6+.4,D=W-1.2,hT=y0+hh;
+add(side([[-L/2+.2,y0],[L/2-.2,y0],[L/2-.2,y0+hh*.35],[L/2-.2-sl,y0+hh],[-L/2+.9,y0+hh],[-L/2+.2,y0+hh*.6]],D),col,0,0,0,g,'hull');
+add(B(D*.8,.12,L*.28),dk,0,hT+.06,-L*.3);[-1,1].forEach(s=>add(Cy(.12,.12,.9,8),dk,s*(D/2-.3),hT-.1,-L/2+.1));[-1,1].forEach(s=>add(B(.5,.4,1.3),dk,s*(W/2-.55),1.55,-L*.22));
+const tu=new THREE.Group();tu.position.set(0,hT,L*.04);g.add(tu);
+const th=.95+H*.18,tp=[[-.3,.9],[.3,.9],[.55,.35],[.5,-.65],[.3,-.9],[-.3,-.9],[-.5,-.65],[-.55,.35]].map(p=>[p[0]*tw,-p[1]*tw]),tg=ext(tp,th);tg.rotateX(-Math.PI/2);
+add(tg,col,0,0,0,tu,'turret');add(Cy(tw*.55,tw*.6,.2,16),dk,0,.05,0,tu);
+add(B(tw*.55,th*.6,.4),dk,0,th*.55,tw*.9,tu);add(B(tw*.7,th*.7,.9),col,0,th*.4,-tw*.95,tu);
+add(Cy(.4,.45,.28,10),col,-tw*.22,th+.14,-tw*.2,tu);add(Cy(.04,.04,.7,6),dk,-tw*.22,th+.5,-tw*.05,tu).rotation.x=Math.PI/2;
+add(Cy(.3,.3,.07,10),dk,tw*.22,th+.04,-tw*.25,tu);add(Cy(.015,.015,3.5,4),dk,-tw*.42,th+1.7,-tw*.7,tu);
+const gun=new THREE.Group();gun.position.set(0,th*.55,tw*.9);tu.add(gun);
+const gr=o.gr||1;add(bar(.15*gr,.18*gr,bl,0),0x333333,0,0,0,gun);if(o.mb){add(bar(.21*gr,.21*gr,bl*.12,bl*.5),0x333333,0,0,0,gun);add(bar(.24*gr,.24*gr,.45,bl-.45),0x222222,0,0,0,gun)}else add(bar(.2*gr,.2*gr,bl*.55,bl*.2),0x3a3a3a,0,0,0,gun);add(bar(.045,.045,1,.1),dk,.4,-.08,0,gun);
+const muz=new THREE.Object3D();muz.position.z=bl+.2;gun.add(muz);
+return{g,ms,tu,gun,muz,o}}
+const TY={
+HV:{L:7.6,W:3.8,H:2.3,col:0x6a6a6a,bl:7,tw:2.7,arm:{front:210,side:120,rear:70,turret:250}},
+MD:{L:6.5,W:3.2,H:2,col:0x7a6a3a,bl:5.5,tw:2.3,arm:{front:110,side:70,rear:45,turret:140}},
+LT:{L:5,W:2.6,H:1.7,col:0x8a7b4a,bl:3.8,tw:1.9,arm:{front:45,side:30,rear:20,turret:50}}};
+function mkUnit(o,x,z,h,en){const t=mkTank(o);Object.assign(t,{x,z,h,en,arm:o.arm,hp:100,ty:h,ep:0,rl:en?rnd(3,8):0,ml:0,rc:0,dead:0,sp:rnd(.08,.2)*(Math.random()<.5?-1:1)});t.g.rotation.order='YXZ';t.ms.forEach(m=>m.userData.tank=t);sc.add(t.g);if(en)TG.push(...t.ms);place(t);return t}
+function place(t){const f=Math.sin(t.h),c=Math.cos(t.h),L=t.o.L/2;t.g.position.set(t.x,hf(t.x,t.z),t.z);t.g.rotation.y=t.h;
+t.g.rotation.x=-Math.atan2(hf(t.x+f*L,t.z+c*L)-hf(t.x-f*L,t.z-c*L),t.o.L);t.tu.rotation.y=t.ty-t.h;t.gun.rotation.x=-t.ep-t.g.rotation.x;t.gun.position.z=t.o.tw*.9-t.rc*.5;t.g.updateMatrixWorld(true)}
+const NATN={DE:'Germany',US:'USA',JP:'Japan',SU:'USSR'},PT={};
+const O=(L,W,H,col,bl,tw,nw,sl,gr,mb,f,s,r,t)=>({L,W,H,col,bl,tw,nw,sl,gr,mb,arm:{front:f,side:s,rear:r,turret:t}}),
+T=(id,nat,n,br,par,rp,ls,sp,turn,tr,pen,sh,o)=>{PT[id]={id,nat,n,br,par,rp,ls,sp,turn,tr,pen,sh,o}};
+/* Tech tree: after a tank's previous stage is researched, you can spend RP on the next one. After research is complete, buy it with SL (gold). rp = RP needed / ls = SL needed */
+T('pz2','DE','Pz.II F',1.0,null,0,0,11,1.1,.7,70,'PzGr',O(4.8,2.5,1.7,0x6a6a5a,2.6,1.7,5,.8,.8,1,35,20,20,30));
+T('pz4f2','DE','Pz.IV F2',3.3,'pz2',500,1500,9,.9,.55,140,'PzGr40',O(6,2.9,2.1,0x8f7f55,4.8,2.1,8,.7,.9,1,50,30,20,50));
+T('pz4h','DE','Pz.IV H',4.0,'pz4f2',900,3000,9,.9,.55,160,'PzGr40',O(6,2.9,2.2,0x8f7f55,4.9,2.1,8,.7,.95,1,80,35,25,60));
+T('panther','DE','Panther D',5.0,'pz4h',1600,6000,11,.8,.55,210,'PzGr39/42',O(6.9,3.3,2.2,0x6e6a45,5.8,2.5,8,2,1.05,1,110,50,40,100));
+T('tiger','DE','Tiger H1',5.7,'panther',2400,10000,6.5,.7,.5,210,'PzGr39',O(6.9,3.7,2.5,0x8f7f55,7.2,2.6,8,.35,1.35,1,260,130,80,280));
+T('m2a4','US','M2A4',1.0,null,0,0,11,1.1,.7,60,'AP',O(4.6,2.4,1.6,0x5a5d3a,2.2,1.6,5,1,.8,0,25,20,15,25));
+T('m4','US','M4 Sherman',3.7,'m2a4',700,2200,9.5,.9,.6,150,'M61 APC',O(6,2.9,2.3,0x5a5d3a,4.2,2.3,6,1.2,.85,0,80,50,40,90));
+T('m26','US','M26 Pershing',5.3,'m4',1500,5500,8.5,.8,.55,210,'T33 APCBC',O(6.8,3.3,2.3,0x5a5d3a,5.6,2.5,6,1.5,1,1,110,76,50,150));
+T('m60','US','M60A3',8.3,'m26',3200,14000,10,.9,.7,330,'APFSDS',O(7.2,3.5,2.4,0x5a5d3a,5.9,2.6,6,1.6,1.05,0,200,80,50,250));
+T('abrams','US','M1 Abrams',11.7,'m60',6000,32000,9.5,.9,.8,420,'APFSDS',O(7.6,3.6,2.1,0x9c8c5c,6.4,2.5,7,1.8,1.1,0,450,150,60,500));
+T('chiha','JP','Type 97 Chi-Ha',1.0,null,0,0,10,1,.7,60,'AP',O(5.5,2.3,2.1,0x7a6a3a,2.6,1.9,6,.7,.8,0,25,20,15,25));
+T('chinu','JP','Type 3 Chi-Nu',3.3,'chiha',500,1500,10,1,.6,120,'APHE',O(5.8,2.4,2.2,0x7a6a3a,4,2.1,6,.8,.9,1,50,35,25,50));
+T('t61','JP','Type 61',8.0,'chinu',3000,12000,10,.9,.7,300,'APDS',O(7,3,2.2,0x5f6a3a,5.5,2.4,6,1.5,1,0,160,70,45,200));
+T('t74','JP','Type 74',9.7,'t61',4200,18000,10.5,1,.8,340,'APFSDS',O(7.2,3.2,2.1,0x5f6a3a,5.8,2.4,6,1.6,1.05,0,260,90,50,300));
+T('t90','JP','Type 90',11.3,'t74',5800,30000,13,1.2,.9,400,'APFSDS',O(7.4,3.3,2,0x5f6a3a,6.2,2.3,7,1.7,1.1,0,340,100,50,380));
+/* ★ Added: Soviet tree */
+T('t34_76','SU','T-34-76',2.3,null,0,0,10,1,.6,130,'APHE',O(6.1,3,2.4,0x4f6a3a,4.4,2.2,6,.8,.9,0,45,45,30,60));
+T('t34_85','SU','T-34-85',3.7,'t34_76',600,1800,10,.9,.6,180,'APCBC',O(6.3,3,2.5,0x4f6a3a,5.2,2.3,6,.9,.9,0,90,50,40,90));
+T('is2','SU','IS-2',5.7,'t34_85',2200,8000,8,.7,.5,210,'APCBC',O(6.8,3.1,2.5,0x4f6a3a,6.1,2.6,7,.4,1.1,0,130,90,60,160));
+T('t62','SU','T-62',8.8,'is2',4500,16000,9,.9,.7,330,'APFSDS',O(6.9,3.4,2.2,0x4a5a3a,5.9,2.6,6,1.5,1.05,0,250,80,50,260));
+/* ★ End of additions */
+const PT0={abrams:{n:'M1 Abrams',d:'Balanced',sp:9.5,turn:.9,br:11.7,pen:420,sh:'APFSDS',tr:.8,o:{L:7.6,W:3.6,H:2.1,col:0x5a5d3a,bl:6.4,tw:2.5,sl:1.8,arm:{front:450,side:150,rear:60,turret:500}}},
+tiger:{
