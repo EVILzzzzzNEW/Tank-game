@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="900" height="220">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#ffd166"/><stop offset=".5" stop-color="#ff6b6b"/><stop offset="1" stop-color="#ffd166"/></linearGradient>
+    <linearGradient id="s" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5ab4ff" stop-opacity="0"/><stop offset=".5" stop-color="#5ab4ff" stop-opacity=".35"/><stop offset="1" stop-color="#5ab4ff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="900" height="220" rx="24" fill="#070a10"/>
+  <rect y="0" width="900" height="220" fill="url(#s)"/>
+  <text x="450" y="112" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="92" letter-spacing="8" fill="url(#g)">ARMOR STRIKE</text>
+  <rect x="200" y="140" width="500" height="6" fill="#ff6b6b"/>
+  <text x="450" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" letter-spacing="10" fill="#9fb8d0">BROWSER TANK BATTLE</text>
+</svg>
