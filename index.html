@@ -529,7 +529,7 @@ addEventListener('wheel',e=>{if(inG&&Math.abs(e.deltaX)>Math.abs(e.deltaY))gYaw+
 function applyGfx(){try{R.setPixelRatio(Math.min(devicePixelRatio,SET.q))}catch(e){}cw=0;rs();
  const de=document.documentElement.style;de.setProperty('--mcs',SET.mcs);de.setProperty('--mco',SET.mco);document.body.classList.toggle('swap',!!SET.swap)}
 function slotNow(){return Math.floor(Date.now()/600000)}
-function mapAt(slot){let h=(slot*2654435761)>>>0;h^=h>>>13;h=Math.imul(h,1274126177)>>>0;h^=h>>>16;return h%3}
+function mapAt(slot){let h=(slot*2654435761)>>>0;h^=h>>>13;h=Math.imul(h,1274126177)>>>0;h^=h>>>16;return (h>>>0)%3}
 function killFx(){const k=$('kl');k.style.display='flex';clearTimeout(killFx.t);killFx.t=setTimeout(()=>k.style.display='none',2400)}
 function mapReload(){if(RLDG)return;RLDG=1;LOAD('Map reloading…',30);
  setTimeout(()=>{const mi=mapAt(MP.slot);buildMap(mi);[...MP.rem.keys()].forEach(mpRemove);
