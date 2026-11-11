@@ -436,7 +436,8 @@ function mpStart(){
  class C extends LB{
   constructor(){super(Photon.ConnectionProtocol.Wss,PHOTON.appId,PHOTON.appVersion)}
   onStateChange(s){dbg('Photon state: '+s);if(s===ST.ConnectedToMaster){LOAD('Searching for a battle room…',40);this.joinRandomOrCreateRoom()}}
-  onJoinRoom(){clearTimeout(mpTimer);MP.nr=this.myActor().actorNr;try{this.myActor().setName(MP.name)}catch(e){}MP.on=1;LOAD('Building the battlefield…',75);deploy(SV.sel,1);LOAD('Ready',100);setTimeout(LOADOFF,400)}
+  onJoinRoom(){clearTimeout(mpTimer);MP.nr=this.myActor().actorNr;try{this.myActor().setName(MP.name)}catch(e){}MP.on=1;LOAD('Building the battlefield…',75);
+  try{deploy(SV.sel,1);LOAD('Ready',100);setTimeout(LOADOFF,400)}catch(e){dbg('Battle start error: '+e.message);mpFail('Battle start error: '+e.message+(e.stack?' @ '+e.stack.split('\n')[1]:''))}}
   onEvent(c,d,nr){mpRecv(c,d,nr)}
   onActorLeave(a){mpRemove(a.actorNr!==undefined?a.actorNr:a)}
   onError(c,m){mpFail('Error: '+m)}
