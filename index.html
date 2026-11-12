@@ -595,7 +595,7 @@ nuke:['#ff6d00','ATOMIC STRIKE','<path d="M54 44 L66 44 L70 72 L50 72 Z" fill="#
 kill:['#212121','DESTROYED','<path d="M34 72 L86 20 M86 72 L34 20" class="bn"/>'+SKL(60,36,15)]
 };
 function badge(k){const e=$('bd'),b=BD[k];if(!e||!b)return;e.style.setProperty('--c',b[0]);e.innerHTML='<div class="bdw" style="--c:'+b[0]+'"><svg viewBox="0 0 120 90">'+BDS+b[2]+'</svg><span>'+b[1]+'</span></div>';e.style.display='block';e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');clearTimeout(badge.t);badge.t=setTimeout(()=>{e.style.display='none'},2300)}
-function sb(k,s,me){if(!s.mg&&(me||s.me))badge(k)}
+function sb(k,s,me){if(!s.mg&&s.me)badge(k)}
 function toast(s){const e=$('ev');e.textContent=s;clearTimeout(toast.t);toast.t=setTimeout(()=>e.textContent='',1600)}
 function kill(t){t.dead=1;t.g.visible=false;t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});boom(t.g.position.clone().setY(t.g.position.y+2),6);SV.kills++;const b=t.br||3,s=Math.round(120+b*60),r=Math.round(60+b*30);SV.sl+=s;SV.rp+=r;btl.k++;btl.sl+=s;btl.rp+=r;save();toast('Destroyed! +'+s+' SL / +'+r+' RP');
 setTimeout(()=>{if(!EN.includes(t))return;let x,z;do{[x,z]=rp()}while(blk(x,z));Object.assign(t,{x,z,hp:100,dead:0});t.g.visible=true;TG.push(...t.ms)},8000)}
@@ -647,7 +647,7 @@ function mpRecv(c,d,nr){if(!d)return;
   t.nm=d.n;t.br=d.br;t.tx=d.x;t.tz=d.z;t.th=d.h;t.tty=d.ty;t.tep=d.ep;t.alt=d.alt||0;t.pitch=d.pt||0;t.roll=d.rl||0;
   const dead=!!d.dead;if(dead!==!!t.dead){t.dead=dead?1:0;t.g.visible=!dead;if(dead)t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});else TG.push(...t.ms)}
  }
- else if(c===2){if(d.to===MP.nr&&!P.dead){P.hp-=d.dmg;toast('-'+d.dmg+' HP');badge(d.dmg>=90?'crit':'pen');if(P.hp<=0)mpDie(d.by)}}
+ else if(c===2){if(d.to===MP.nr&&!P.dead){P.hp-=d.dmg;toast('-'+d.dmg+' HP');if(P.hp<=0)mpDie(d.by)}}
  else if(c===3){if(d.by===MP.nr)mpReward(d.br);else toast((d.n||'Enemy')+' was destroyed')}
  else if(c===4)shootVis(d)}
 function mpReward(br){const b=br||3,s=Math.round(120+b*60),r=Math.round(60+b*30);SV.kills++;SV.sl+=s;SV.rp+=r;btl.k++;btl.sl+=s;btl.rp+=r;save();badge('kill');toast('Destroyed! +'+s+' SL / +'+r+' RP')}
