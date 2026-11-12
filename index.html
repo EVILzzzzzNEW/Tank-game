@@ -359,7 +359,7 @@ loadThree(0);
 <script>
 window.startGame=function(){
 const DSET=()=>({fps:60,gfx:1,q:1,sens:1,ar:'16:9',mcs:1,mco:.7,swap:0,k:{fwd:'KeyW',back:'KeyS',left:'KeyA',right:'KeyD',fire:'Mouse0',mg:'Space',scope:'ShiftLeft'}});
-let SET=DSET();const GM=[.6,1,1.4];let gYaw=0,gDrag=null,gLx=0,lookY=0,lookP=0,lookAt=0,ZM=1,ZG=1,GP=null,ZMt=1,ZGt=1;
+let SET=DSET();const GM=[.6,1,1.4];let gYaw=0,gDrag=null,gLx=0,lookY=0,lookP=0,lookAt=0,ZM=1,ZG=1,GP=null,ZMt=1,ZGt=1,SCOPE_ON=0;
 const $=id=>document.getElementById(id);
 dbg(typeof THREE==='undefined'?'4. Three.js NOT loaded':'4. Three.js ready');
 if(typeof THREE==='undefined')$('start').innerHTML='Failed to load Three.js. Check your network connection.';
@@ -600,6 +600,7 @@ function toast(s){const e=$('ev');e.textContent=s;clearTimeout(toast.t);toast.t=
 function kill(t){t.dead=1;t.g.visible=false;t.ms.forEach(m=>{const i=TG.indexOf(m);if(i>=0)TG.splice(i,1)});boom(t.g.position.clone().setY(t.g.position.y+2),6);SV.kills++;const b=t.br||3,s=Math.round(120+b*60),r=Math.round(60+b*30);SV.sl+=s;SV.rp+=r;btl.k++;btl.sl+=s;btl.rp+=r;save();toast('Destroyed! +'+s+' SL / +'+r+' RP');
 setTimeout(()=>{if(!EN.includes(t))return;let x,z;do{[x,z]=rp()}while(blk(x,z));Object.assign(t,{x,z,hp:100,dead:0});t.g.visible=true;TG.push(...t.ms)},8000)}
 function shoot(t,o){const q=new THREE.Quaternion(),d=new THREE.Vector3(0,0,1),p=new THREE.Vector3();const mz=o.mg&&t.mgm?t.mgm:t.muz;mz.getWorldPosition(p);mz.getWorldQuaternion(q);d.applyQuaternion(q);
+ if(t===P&&!o.mg&&GP){const tg=GP.clone();const hh=Math.hypot(tg.x-p.x,tg.z-p.z);if(!SCOPE_ON)tg.y+=.5*9.8*(hh/V0)**2;d.copy(tg.sub(p)).normalize()}
 if(o.sp)d.add(new THREE.Vector3(rnd(-o.sp,o.sp),rnd(-o.sp,o.sp),rnd(-o.sp,o.sp))).normalize();
 if(MP.on&&t===P&&!o.mg)mpSend(4,{p:p.toArray(),d:d.toArray(),v:o.v});
 const m=new THREE.Mesh(o.mg?MG:BG,o.mg?MM:TM);sc.add(m);S.push({m,p,v:d.multiplyScalar(o.v),t:0,dist:0,en:o.en,mg:o.mg,pen:o.pen,me:t===P});boom(p,o.mg?.3:1.5,0xffe080)}
@@ -876,7 +877,7 @@ for(let s=4;s<td;s+=2){const x=o.x+d.x*s,z=o.z+d.z*s;if(Math.abs(x)<390&&Math.ab
 return{pt:o.clone().addScaledVector(d,td),td,hit,d}}
 const scr=(v)=>{v=v.clone().project(cam);return[(v.x*.5+.5)*cw*SX,(-v.y*.5+.5)*ch,v.z<1]};
 let last=0,lf=0;
-function loop(ts){requestAnimationFrame(loop);if(SET.fps&&ts-lf<1000/SET.fps-3)return;lf=ts;rs();if(started&&MP.on){const sl=slotNow();if(sl!==MP.slot){MP.slot=sl;mapReload()}}const dt=Math.min(.05,(ts-last)/1000||0);last=ts;const zk=1-Math.exp(-dt*12);ZM+=(ZMt-ZM)*zk;ZG+=(ZGt-ZG)*zk;const scope=started&&!P.o.plane&&(keys[SET.k.scope]||rmb||scTog);
+function loop(ts){requestAnimationFrame(loop);if(SET.fps&&ts-lf<1000/SET.fps-3)return;lf=ts;rs();if(started&&MP.on){const sl=slotNow();if(sl!==MP.slot){MP.slot=sl;mapReload()}}const dt=Math.min(.05,(ts-last)/1000||0);last=ts;const zk=1-Math.exp(-dt*12);ZM+=(ZMt-ZM)*zk;ZG+=(ZGt-ZG)*zk;const scope=started&&!P.o.plane&&(keys[SET.k.scope]||rmb||scTog);SCOPE_ON=scope;
 if(started&&!P.dead&&P.o.plane){
  const up=(keys[SET.k.fwd]||keys.ArrowUp)?1:0,dn=(keys[SET.k.back]||keys.ArrowDown)?1:0,lf=(keys[SET.k.left]||keys.ArrowLeft)?1:0,rt=(keys[SET.k.right]||keys.ArrowRight)?1:0;
  const cTgt=cl(up-dn-jy,-1,1),tTgt=cl(lf-rt-jx,-1,1);
@@ -901,7 +902,7 @@ if(scope){const gp=new THREE.Vector3();P.gun.getWorldPosition(gp);cam.position.c
 else{const pv=new THREE.Vector3(P.x,hf(P.x,P.z)+(P.o.plane?(P.alt||25):3.4),P.z);cam.position.copy(pv).addScaledVector(d,-15*ZM);cam.position.y=Math.max(cam.position.y,hf(cam.position.x,cam.position.z)+1.5)}
 cam.lookAt(cam.position.clone().add(d));cam.updateMatrixWorld();
 const ar=aimRay(),g0=new THREE.Vector3();P.gun.getWorldPosition(g0);
-const ddx=ar.pt.x-g0.x,ddz=ar.pt.z-g0.z,hd=Math.hypot(ddx,ddz),drop=scope?0:.5*9.8*(hd/V0)**2,el=Math.atan2(ar.pt.y-g0.y+drop,Math.max(hd,1));
+const ap=GP||ar.pt;const ddx=ap.x-g0.x,ddz=ap.z-g0.z,hd=Math.hypot(ddx,ddz),drop=scope?0:.5*9.8*(hd/V0)**2,el=Math.atan2(ap.y-g0.y+drop,Math.max(hd,1));
 const trv=P.tr||.8;P.ty+=cl(wr(Math.atan2(ddx,ddz)-P.ty)*Math.min(1,dt*2.5),-trv*dt,trv*dt);P.ep+=cl((cl(el,-.14,.35)-P.ep)*Math.min(1,dt*2.5),-trv*.45*dt,trv*.45*dt);P.rc=Math.max(0,P.rc-dt*2.5);P.rl=Math.max(0,P.rl-dt);P.ml=Math.max(0,P.ml-dt);place(P);
 const mq=new THREE.Quaternion(),md=new THREE.Vector3(0,0,1),mp=new THREE.Vector3();P.muz.getWorldPosition(mp);P.muz.getWorldQuaternion(mq);md.applyQuaternion(mq);
 if(started&&(down||keys[SET.k.fire])&&P.rl<=0&&!P.dead&&!P.o.plane){shoot(P,{v:V0,pen:PEN});P.rl=RLD;P.rc=1}
