@@ -329,6 +329,7 @@ button:not(.mc):not(.mc2):disabled{background:#2a2e35!important;color:#666!impor
 .grc{display:inline-block;width:118px;margin:6px;background:#161c24;border-top:3px solid #ffb300;padding:6px;font-size:12px;vertical-align:top}
 .grc img{width:100%;height:76px;object-fit:cover;display:block;margin-bottom:6px}
 #gcx button{font-size:13px}
+.cur{color:#ffd166;letter-spacing:.04em}
 .ver{font-size:10px;color:#ffb300;opacity:.85;letter-spacing:.06em;margin-left:8px;text-transform:none;font-weight:600}
 #gcx{overflow:hidden}
 .gcw{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:22px 16px 28px;z-index:1;pointer-events:none}
@@ -932,7 +933,7 @@ function renderGarage(msg){inG=1;document.body.classList.remove('plane');documen
 if(!SV.own[SV.sel])SV.sel=Object.keys(SV.own)[0];
 const el=$('gui'),t=PT[SV.sel],dead=SV.dead[SV.sel],own=Object.keys(PT).filter(i=>SV.own[i]),alive=own.some(i=>!SV.dead[i]),rcost=q=>Math.round(100+q.br*30);
 showTank(SV.sel);el.style.display='flex';
-el.innerHTML=`<div class=tb><div class=tl><b>${esc(U)}</b><small class=ver>v0.3</small><br>BR ${t.br.toFixed(1)}</div><div class=mid><button class=battle id=go${dead?' disabled':''}>TO BATTLE!</button><button class=mpb id=mpb${dead?' disabled':''}>MULTIPLAYER</button></div><div class=tr2>🪙 ${SV.sl} SL　🔬 ${SV.rp} RP<br><button id=gc>Gacha</button> <button id=rs>Research</button> <button id=pm>Promo</button> <button id=st>Settings</button> <button id=lo>Log out</button></div></div>`
+el.innerHTML=`<div class=tb><div class=tl><b>${esc(U)}</b><small class=ver>v0.3</small><br>BR ${t.br.toFixed(1)}　<span class=cur>🪙 ${SV.sl} SL　🔬 ${SV.rp} RP</span></div><div class=mid><button class=battle id=go${dead?' disabled':''}>TO BATTLE!</button><button class=mpb id=mpb${dead?' disabled':''}>MULTIPLAYER</button></div><div class=tr2><button id=gc>Gacha</button> <button id=rs>Research</button> <button id=pm>Promo</button> <button id=st>Settings</button> <button id=lo>Log out</button></div></div>`
 +`<div class=info>${msg?'<span class=wr>'+msg+'</span><br>':''}${alive?'':'<span class=wr>GAME OVER — all tanks destroyed</span> <button id=ra>Repair all tanks for free</button><br>'}<b>${t.n}</b>　BR ${t.br.toFixed(1)}　Armor front ${t.o.arm.front} / side ${t.o.arm.side} / rear ${t.o.arm.rear}mm　Penetration ${t.pen}mm (${t.sh})　Speed ${t.sp}${dead?'　<span class=wr>Destroyed</span>':''}</div>`
 +`<div class=slots>${own.map(i=>{const q=PT[i],d=SV.dead[i];return `<div class=${i==SV.sel?'slot-on':'slot'} data-s=${i}><b>${q.n}</b>${q.dev?' <span class=devb>DEV</span>':''}<br>BR ${q.br.toFixed(1)}<br>${d?`🔴 Destroyed <button data-f=${i}>Repair ${rcost(q)} SL</button>`:'🟢 Ready'}</div>`}).join('')}</div>`;
 $('go').onclick=()=>{if(!dead)pickMap()};$('mpb').onclick=()=>{if(!dead)mpStart()};$('rs').onclick=()=>renderTree();$('gc').onclick=()=>openGacha();$('st').onclick=()=>openSettings();$('pm').onclick=()=>openPromo();$('lo').onclick=()=>{save();U=null;SV=null;SET=DSET();applyGfx();el.style.display='none';showScreen('login')};
